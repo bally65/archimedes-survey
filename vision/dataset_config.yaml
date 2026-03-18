@@ -1,0 +1,39 @@
+# dataset_config.yaml
+# ===================
+# YOLO-format dataset configuration for Lysiosquillina burrow detection.
+# Archimedes Survey robot -- vision module.
+#
+# Directory structure:
+#   datasets/burrow/
+#     images/train/  val/  test/    <- *.jpg / *.png
+#     labels/train/  val/  test/    <- *.txt (YOLO format)
+#
+# Label format (per line in each .txt):
+#   <class_id> <cx_norm> <cy_norm> <w_norm> <h_norm>   (all in [0,1])
+#
+# Burrow size reference:
+#   Physical diameter: 15-40 mm
+#   At camera height 0.30m with fx~267px/m -> apparent ~4-11px at 640x640
+#   -> annotate tightly around the dark opening only
+
+path:   datasets/burrow
+train:  images/train
+val:    images/val
+test:   images/test
+
+nc: 1
+
+names:
+  0: burrow
+
+# -----------------------------------------------------------------------
+# Annotation notes
+# -----------------------------------------------------------------------
+# - Label the OPENING (dark hole) only, not the surrounding sand mound.
+# - For oval burrows annotate the minimal enclosing rectangle.
+# - Recommended minimum annotation resolution: 1280x720.
+# - Infer at 640x640 (imgsz in train_burrow.py).
+#
+# Recommended train/val/test split: 70 / 20 / 10
+# Minimum for meaningful fine-tuning: ~200 labelled images.
+# -----------------------------------------------------------------------

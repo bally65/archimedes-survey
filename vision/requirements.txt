@@ -1,0 +1,26 @@
+# requirements.txt
+# ================
+# Archimedes Survey -- vision module (burrow detection)
+# Python 3.10+  |  RPi OS Bookworm (aarch64) or Ubuntu 22.04
+
+# Core detection
+ultralytics>=8.2.0          # YOLOv8 (pulls in torch)
+opencv-python>=4.9.0        # use opencv-python-headless on RPi (no GUI)
+numpy>=1.24.0
+
+# ONNX export & inference (RPi CPU deployment)
+onnx>=1.16.0
+onnxruntime>=1.18.0         # CPU; use onnxruntime-gpu if CUDA available
+
+# ROS2 node dependencies -- install via apt, NOT pip:
+#   sudo apt install python3-rclpy
+#   sudo apt install ros-<distro>-cv-bridge
+#   sudo apt install ros-<distro>-sensor-msgs
+
+# Optional training utilities
+# tensorboard>=2.16.0
+# albumentations>=1.4.0
+
+# Raspberry Pi 4/5 PyTorch install:
+#   pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+#   pip install ultralytics

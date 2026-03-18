@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>Archimedes Survey — 3D Viewer</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:#1a1a2e; color:#e0e0e0; font-family:'Segoe UI',sans-serif; display:flex; height:100vh; overflow:hidden; }
+
+#sidebar {
+  width:260px; min-width:220px; background:#16213e;
+  display:flex; flex-direction:column; border-right:1px solid #0f3460;
+  overflow-y:auto; z-index:10;
+}
+#sidebar h1 { font-size:13px; padding:12px 14px 6px; color:#e94560; letter-spacing:1px; text-transform:uppercase; }
+#sidebar h2 { font-size:11px; padding:8px 14px 4px; color:#a0a0c0; text-transform:uppercase; letter-spacing:.8px; }
+
+.part-row {
+  display:flex; align-items:center; gap:8px;
+  padding:5px 14px; cursor:pointer; border-radius:4px; margin:1px 6px;
+  transition:background .15s;
+}
+.part-row:hover { background:#0f3460; }
+.part-row input[type=checkbox] { cursor:pointer; accent-color:#e94560; }
+.part-color { width:10px; height:10px; border-radius:2px; flex-shrink:0; }
+.part-name { font-size:12px; flex:1; }
+.part-size { font-size:10px; color:#607080; }
+
+#info-bar {
+  padding:8px 14px; font-size:11px; color:#607080;
+  border-top:1px solid #0f3460; margin-top:auto;
+}
+#info-bar b { color:#e0e0e0; }
+
+#controls-bar {
+  padding:8px 14px; display:flex; flex-direction:column; gap:6px;
+  border-top:1px solid #0f3460;
+}
+.btn {
+  background:#0f3460; border:1px solid #1a4a8a; color:#c0d0f0;
+  padding:5px 10px; border-radius:4px; cursor:pointer; font-size:11px;
+  transition:background .15s;
+}
+.btn:hover { background:#1a5090; }
+.btn-row { display:flex; gap:6px; }
+
+.sep { border:none; border-top:1px solid #0f3460; margin:4px 0; }
+
+select {
+  background:#0f3460; border:1px solid #1a4a8a; color:#c0d0f0;
+  padding:4px 6px; border-radius:4px; font-size:11px; width:100%;
+}
+
+#canvas-wrap { flex:1; position:relative; }
+canvas { display:block; width:100% !important; height:100% !important; }
+
+#overlay {
+  position:absolute; top:10px; right:10px;
+  background:rgba(22,33,62,.85); border:1px solid #0f3460;
+  border-radius:6px; padding:10px 14px; font-size:11px; min-width:160px;
+  pointer-events:none;
+}
+#overlay b { color:#e94560; }
+#overlay .row { margin:2px 0; }
+
+#loading {
+  position:absolute; inset:0; background:#1a1a2e;
+  display:flex; align-items:center; justify-content:center;
+  flex-direction:column; gap:12px; font-size:14px; color:#a0a0c0;
+  z-index:100;
+}
+#loading-bar { width:260px; height:4px; background:#0f3460; border-radius:2px; overflow:hidden; }
+#loading-fill { height:100%; background:#e94560; width:0%; transition:width .3s; }
+</style>
+</head>
+<body>
+
+<div id="sidebar">
+  <h1>⚙ Archimedes 3D</h1>
+
+  <div style="padding:6px 14px;">
+    <select id="preset-select" onchange="loadPreset(this.value)">
+      <option value="full">完整組裝 + 手臂</option>
+      <option value="machine">主機（無手臂）</option>
+      <option value="arm">機械手臂</option>
+      <option value="blade">螺旋葉片預覽</option>
+      <option value="all">全部零件</option>
+    </select>
+  </div>
+
+  <h2>零件列表</h2>
+  <div id="part-list"></div>
+
+  <hr class="sep">
+  <div id="controls-bar">
+    <div class="btn-row">
+      <button class="btn" onclick="toggleAll(true)">全顯示</button>
+      <button class="btn" onclick="toggleAll(false)">全隱藏</button>
+    </div>
+    <div class="btn-row">
+      <button class="btn" onclick="resetCamera()">重置視角</button>
+      <button class="btn" onclick="toggleWireframe()">線框</button>
+    </div>
+    <div class="btn-row">
+      <button class="btn" onclick="toggleGrid()">格線</button>
+      <button class="btn" onclick="toggleAxes()">座標軸</button>
+    </div>
+    <label style="font-size:11px;color:#a0b0c0;display:flex;align-items:center;gap:6px;">
+      <input type="checkbox" id="explode-cb" onchange="setExplode(this.checked)"> 爆炸圖
+    </label>
+  </div>
+
+  <div id="info-bar">
+    <div>滑鼠：<b>左鍵</b>旋轉 <b>右鍵</b>平移 <b>滾輪</b>縮放</div>
+    <div id="stats" style="margin-top:4px;color:#607080;"></div>
+  </div>
+</div>
+
+<div id="canvas-wrap">
+  <div id="loading">
+    <div>載入 3D 模型中...</div>
+    <div id="loading-bar"><div id="loading-fill"></div></div>
+    <div id="loading-text" style="font-size:11px;"></div>
+  </div>
+  <div id="overlay">
+    <div><b>尺寸資訊</b></div>
+    <div class="row" id="dim-info">—</div>
+    <div class="row" id="hover-info" style="margin-top:4px;color:#a0b0c0;">hover 零件查看</div>
+  </div>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.163.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.163.0/examples/jsm/"
+  }
+}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { STLLoader } from 'three/addons/loaders/STLLoader.js';
+
+// ── Part catalogue ───────────────────────────────────────────────────────────
+const PARTS = [
+  // id, label, path, color-hex, group, default-visible
+  { id:'full_asm',   label:'完整組裝+手臂',  path:'mechanics/stl/machine_v2_WITH_ARM.stl',    color:0x4488cc, group:'assembly', vis:true  },
+  { id:'machine_v2', label:'主機組裝 v2',     path:'mechanics/stl/machine_v2_ASSEMBLY.stl',    color:0x3377bb, group:'assembly', vis:false },
+  { id:'arm_asm',    label:'機械手臂',        path:'mechanics/stl/arm/arm_ASSEMBLY.stl',       color:0x44bb88, group:'assembly', vis:false },
+  { id:'blade_prev', label:'螺旋葉片(1圈)',   path:'mechanics/stl/blade_FULL_PREVIEW_1turn.stl',color:0xddaa33,group:'blade',   vis:false },
+  // arm parts
+  { id:'arm_base',   label:'手臂底座',        path:'mechanics/stl/arm/arm_base_mount.stl',     color:0x66cc88, group:'arm',     vis:false },
+  { id:'arm_turret', label:'J1 偏搖轉台',     path:'mechanics/stl/arm/arm_j1_turret.stl',      color:0x55bb77, group:'arm',     vis:false },
+  { id:'arm_upper',  label:'上臂連桿',        path:'mechanics/stl/arm/arm_upper_arm.stl',      color:0x44aa66, group:'arm',     vis:false },
+  { id:'arm_fore',   label:'前臂連桿',        path:'mechanics/stl/arm/arm_forearm.stl',        color:0x339955, group:'arm',     vis:false },
+  { id:'arm_probe',  label:'探針',            path:'mechanics/stl/arm/arm_probe.stl',          color:0xcccccc, group:'arm',     vis:false },
+  { id:'arm_pin',    label:'軸銷',            path:'mechanics/stl/arm/arm_pivot_pin.stl',      color:0xaaaaaa, group:'arm',     vis:false },
+  { id:'arm_horn',   label:'Servo Horn 接片', path:'mechanics/stl/arm/arm_servo_horn_adp.stl', color:0x998866, group:'arm',     vis:false },
+  { id:'arm_clip',   label:'走線夾',          path:'mechanics/stl/arm/arm_cable_clip.stl',     color:0x887755, group:'arm',     vis:false },
+  { id:'arm_tray',   label:'PCA9685 托盤',    path:'mechanics/stl/arm/arm_pca9685_tray.stl',   color:0x336699, group:'arm',     vis:false },
+];
+
+const PRESETS = {
+  full:    ['full_asm'],
+  machine: ['machine_v2'],
+  arm:     ['arm_asm'],
+  blade:   ['blade_prev'],
+  all:     PARTS.map(p=>p.id),
+};
+
+// ── Three.js setup ───────────────────────────────────────────────────────────
+const wrap    = document.getElementById('canvas-wrap');
+const renderer= new THREE.WebGLRenderer({ antialias:true });
+renderer.setPixelRatio(window.devicePixelRatio);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type    = THREE.PCFSoftShadowMap;
+wrap.appendChild(renderer.domElement);
+
+const scene  = new THREE.Scene();
+scene.background = new THREE.Color(0x1a1a2e);
+scene.fog        = new THREE.FogExp2(0x1a1a2e, 0.00012);
+
+const camera = new THREE.PerspectiveCamera(45, 1, 1, 50000);
+camera.position.set(800, 600, 1200);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+controls.minDistance   = 50;
+controls.maxDistance   = 10000;
+
+// Lights
+const ambient = new THREE.AmbientLight(0xffffff, 0.4);
+scene.add(ambient);
+const dirA = new THREE.DirectionalLight(0xffffff, 1.2);
+dirA.position.set(800, 1200, 600);
+dirA.castShadow = true;
+scene.add(dirA);
+const dirB = new THREE.DirectionalLight(0x8899ff, 0.5);
+dirB.position.set(-600, -400, -800);
+scene.add(dirB);
+
+// Grid
+const grid = new THREE.GridHelper(3000, 60, 0x2a2a4a, 0x1e1e3a);
+grid.position.y = -10;
+scene.add(grid);
+
+// Axes
+const axes = new THREE.AxesHelper(200);
+axes.visible = false;
+scene.add(axes);
+
+// ── Mesh store ───────────────────────────────────────────────────────────────
+const meshMap   = {};    // id → THREE.Mesh
+const origPos   = {};    // id → original position (for explode)
+let   wireframe = false;
+let   explode   = false;
+let   totalTris = 0;
+
+// ── STL Loader ───────────────────────────────────────────────────────────────
+const loader = new STLLoader();
+let loaded = 0;
+
+async function loadPart(p) {
+  return new Promise((resolve) => {
+    loader.load(
+      '/' + p.path,
+      (geom) => {
+        geom.computeVertexNormals();
+        const mat = new THREE.MeshPhongMaterial({
+          color: p.color,
+          specular: 0x333355,
+          shininess: 40,
+          side: THREE.DoubleSide,
+        });
+        const mesh = new THREE.Mesh(geom, mat);
+        mesh.castShadow    = true;
+        mesh.receiveShadow = true;
+        mesh.visible       = p.vis;
+        mesh.userData.id   = p.id;
+        mesh.userData.label= p.label;
+        scene.add(mesh);
+        meshMap[p.id] = mesh;
+
+        // bounding box center
+        geom.computeBoundingBox();
+        const bb = geom.boundingBox;
+        const cx = (bb.max.x+bb.min.x)/2;
+        const cy = (bb.max.y+bb.min.y)/2;
+        const cz = (bb.max.z+bb.min.z)/2;
+        origPos[p.id] = new THREE.Vector3(cx, cy, cz);
+
+        loaded++;
+        const pct = Math.round(loaded/PARTS.length*100);
+        document.getElementById('loading-fill').style.width = pct+'%';
+        document.getElementById('loading-text').textContent = `${p.label} (${loaded}/${PARTS.length})`;
+        updateStats();
+        resolve();
+      },
+      undefined,
+      (err) => { console.warn('Failed:', p.path, err); loaded++; resolve(); }
+    );
+  });
+}
+
+async function loadAll() {
+  document.getElementById('loading').style.display='flex';
+  for (const p of PARTS) await loadPart(p);
+  document.getElementById('loading').style.display='none';
+  fitCamera();
+  updateDimInfo();
+}
+
+// ── Sidebar ───────────────────────────────────────────────────────────────────
+function buildSidebar() {
+  const list = document.getElementById('part-list');
+  const groups = {};
+  PARTS.forEach(p => { (groups[p.group]??=[]).push(p); });
+  const groupLabels = { assembly:'組裝預覽', blade:'螺旋葉片', arm:'手臂零件' };
+
+  for (const [g, parts] of Object.entries(groups)) {
+    const h = document.createElement('div');
+    h.innerHTML = `<div style="padding:6px 14px 2px;font-size:10px;color:#607080;text-transform:uppercase;letter-spacing:.8px;">${groupLabels[g]??g}</div>`;
+    list.appendChild(h);
+    parts.forEach(p => {
+      const row = document.createElement('div');
+      row.className='part-row';
+      row.dataset.id = p.id;
+      row.innerHTML = `
+        <input type="checkbox" id="cb_${p.id}" ${p.vis?'checked':''} onchange="window.togglePart('${p.id}',this.checked)">
+        <div class="part-color" style="background:#${p.color.toString(16).padStart(6,'0')}"></div>
+        <label class="part-name" for="cb_${p.id}" style="cursor:pointer;">${p.label}</label>
+      `;
+      list.appendChild(row);
+    });
+  }
+}
+
+window.togglePart = (id, vis) => {
+  if (meshMap[id]) { meshMap[id].visible = vis; updateDimInfo(); }
+};
+window.toggleAll  = (vis) => {
+  PARTS.forEach(p => { if(meshMap[p.id]) meshMap[p.id].visible=vis; document.getElementById('cb_'+p.id).checked=vis; });
+  updateDimInfo();
+};
+window.loadPreset = (name) => {
+  const ids = PRESETS[name]||[];
+  PARTS.forEach(p => {
+    const v = ids.includes(p.id);
+    if(meshMap[p.id]) meshMap[p.id].visible = v;
+    const cb = document.getElementById('cb_'+p.id);
+    if(cb) cb.checked = v;
+  });
+  fitCamera(); updateDimInfo();
+};
+window.resetCamera = () => { camera.position.set(800,600,1200); controls.target.set(0,250,250); controls.update(); };
+window.toggleWireframe = () => {
+  wireframe = !wireframe;
+  Object.values(meshMap).forEach(m => m.material.wireframe = wireframe);
+};
+window.toggleGrid  = () => grid.visible = !grid.visible;
+window.toggleAxes  = () => axes.visible = !axes.visible;
+window.setExplode  = (v) => { explode=v; applyExplode(); };
+
+function applyExplode() {
+  const center = new THREE.Vector3(0, 250, 225);
+  const scale  = explode ? 1.5 : 0;
+  Object.entries(meshMap).forEach(([id, mesh]) => {
+    if (!origPos[id]) return;
+    const dir = origPos[id].clone().sub(center).normalize();
+    mesh.position.copy(dir.multiplyScalar(explode ? 120 : 0));
+  });
+}
+
+function fitCamera() {
+  const box = new THREE.Box3();
+  Object.values(meshMap).forEach(m => { if(m.visible) box.expandByObject(m); });
+  if (box.isEmpty()) return;
+  const center = new THREE.Vector3(); box.getCenter(center);
+  const size   = new THREE.Vector3(); box.getSize(size);
+  const maxDim = Math.max(size.x, size.y, size.z);
+  camera.position.set(center.x + maxDim*1.2, center.y + maxDim*0.8, center.z + maxDim*1.2);
+  controls.target.copy(center);
+  controls.update();
+}
+
+function updateDimInfo() {
+  const box = new THREE.Box3();
+  Object.values(meshMap).forEach(m => { if(m.visible) box.expandByObject(m); });
+  if (box.isEmpty()) { document.getElementById('dim-info').textContent='—'; return; }
+  const s = new THREE.Vector3(); box.getSize(s);
+  document.getElementById('dim-info').innerHTML =
+    `W: <b>${s.x.toFixed(0)}</b> × H: <b>${s.y.toFixed(0)}</b> × L: <b>${s.z.toFixed(0)}</b> mm`;
+}
+
+function updateStats() {
+  let tris=0, vis=0;
+  Object.values(meshMap).forEach(m => {
+    const t = m.geometry.attributes.position.count/3;
+    tris += t; if(m.visible) vis += t;
+  });
+  document.getElementById('stats').textContent = `顯示 ${Math.round(vis/1000)}k / 共 ${Math.round(tris/1000)}k 三角面`;
+}
+
+// ── Raycaster for hover ───────────────────────────────────────────────────────
+const raycaster = new THREE.Raycaster();
+const mouse     = new THREE.Vector2();
+let   lastHover = null;
+
+renderer.domElement.addEventListener('mousemove', (e) => {
+  const rect = renderer.domElement.getBoundingClientRect();
+  mouse.x =  (e.clientX - rect.left) / rect.width  * 2 - 1;
+  mouse.y = -(e.clientY - rect.top)  / rect.height * 2 + 1;
+  raycaster.setFromCamera(mouse, camera);
+  const hits = raycaster.intersectObjects(Object.values(meshMap).filter(m=>m.visible));
+  if (hits.length > 0) {
+    const id = hits[0].object.userData.id;
+    if (id !== lastHover) {
+      if (lastHover && meshMap[lastHover]) meshMap[lastHover].material.emissive.setHex(0x000000);
+      meshMap[id].material.emissive.setHex(0x223344);
+      document.getElementById('hover-info').textContent = meshMap[id].userData.label;
+      lastHover = id;
+    }
+  } else {
+    if (lastHover && meshMap[lastHover]) meshMap[lastHover].material.emissive.setHex(0x000000);
+    document.getElementById('hover-info').textContent = 'hover 零件查看';
+    lastHover = null;
+  }
+});
+
+// ── Resize ───────────────────────────────────────────────────────────────────
+function onResize() {
+  const w = wrap.clientWidth, h = wrap.clientHeight;
+  renderer.setSize(w, h);
+  camera.aspect = w/h; camera.updateProjectionMatrix();
+}
+window.addEventListener('resize', onResize);
+onResize();
+
+// ── Render loop ───────────────────────────────────────────────────────────────
+function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+  renderer.render(scene, camera);
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+buildSidebar();
+animate();
+loadAll();
+</script>
+</body>
+</html>

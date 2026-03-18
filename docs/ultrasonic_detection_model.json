@@ -1,0 +1,204 @@
+{
+  "frequency_analysis": [
+    {
+      "f_kHz": 20,
+      "wavelength_mm": 80.0,
+      "resolution_mm": 40.0,
+      "penetration_cm": 942.8
+    },
+    {
+      "f_kHz": 40,
+      "wavelength_mm": 40.0,
+      "resolution_mm": 20.0,
+      "penetration_cm": 333.3
+    },
+    {
+      "f_kHz": 80,
+      "wavelength_mm": 20.0,
+      "resolution_mm": 10.0,
+      "penetration_cm": 117.9
+    },
+    {
+      "f_kHz": 100,
+      "wavelength_mm": 16.0,
+      "resolution_mm": 8.0,
+      "penetration_cm": 84.3
+    },
+    {
+      "f_kHz": 200,
+      "wavelength_mm": 8.0,
+      "resolution_mm": 4.0,
+      "penetration_cm": 29.8
+    }
+  ],
+  "snr_results": [
+    {
+      "depth_cm": 10,
+      "diam_mm": 15,
+      "snr_dB": 72.7,
+      "detectable": "YES"
+    },
+    {
+      "depth_cm": 10,
+      "diam_mm": 20,
+      "snr_dB": 72.7,
+      "detectable": "YES"
+    },
+    {
+      "depth_cm": 10,
+      "diam_mm": 25,
+      "snr_dB": 72.7,
+      "detectable": "YES"
+    },
+    {
+      "depth_cm": 10,
+      "diam_mm": 30,
+      "snr_dB": 72.7,
+      "detectable": "YES"
+    },
+    {
+      "depth_cm": 15,
+      "diam_mm": 15,
+      "snr_dB": 68.6,
+      "detectable": "YES"
+    },
+    {
+      "depth_cm": 15,
+      "diam_mm": 20,
+      "snr_dB": 68.6,
+      "detectable": "YES"
+    },
+    {
+      "depth_cm": 15,
+      "diam_mm": 25,
+      "snr_dB": 68.6,
+      "detectable": "YES"
+    },
+    {
+      "depth_cm": 15,
+      "diam_mm": 30,
+      "snr_dB": 68.6,
+      "detectable": "YES"
+    },
+    {
+      "depth_cm": 20,
+      "diam_mm": 15,
+      "snr_dB": 64.3,
+      "detectable": "YES"
+    },
+    {
+      "depth_cm": 20,
+      "diam_mm": 20,
+      "snr_dB": 65.5,
+      "detectable": "YES"
+    },
+    {
+      "depth_cm": 20,
+      "diam_mm": 25,
+      "snr_dB": 65.5,
+      "detectable": "YES"
+    },
+    {
+      "depth_cm": 20,
+      "diam_mm": 30,
+      "snr_dB": 65.5,
+      "detectable": "YES"
+    },
+    {
+      "depth_cm": 30,
+      "diam_mm": 15,
+      "snr_dB": 52.6,
+      "detectable": "YES"
+    },
+    {
+      "depth_cm": 30,
+      "diam_mm": 20,
+      "snr_dB": 57.6,
+      "detectable": "YES"
+    },
+    {
+      "depth_cm": 30,
+      "diam_mm": 25,
+      "snr_dB": 60.7,
+      "detectable": "YES"
+    },
+    {
+      "depth_cm": 30,
+      "diam_mm": 30,
+      "snr_dB": 60.7,
+      "detectable": "YES"
+    },
+    {
+      "depth_cm": 40,
+      "diam_mm": 15,
+      "snr_dB": 43.9,
+      "detectable": "YES"
+    },
+    {
+      "depth_cm": 40,
+      "diam_mm": 20,
+      "snr_dB": 48.9,
+      "detectable": "YES"
+    },
+    {
+      "depth_cm": 40,
+      "diam_mm": 25,
+      "snr_dB": 52.7,
+      "detectable": "YES"
+    },
+    {
+      "depth_cm": 40,
+      "diam_mm": 30,
+      "snr_dB": 55.9,
+      "detectable": "YES"
+    },
+    {
+      "depth_cm": 50,
+      "diam_mm": 15,
+      "snr_dB": 36.9,
+      "detectable": "YES"
+    },
+    {
+      "depth_cm": 50,
+      "diam_mm": 20,
+      "snr_dB": 41.9,
+      "detectable": "YES"
+    },
+    {
+      "depth_cm": 50,
+      "diam_mm": 25,
+      "snr_dB": 45.7,
+      "detectable": "YES"
+    },
+    {
+      "depth_cm": 50,
+      "diam_mm": 30,
+      "snr_dB": 48.9,
+      "detectable": "YES"
+    },
+    {
+      "depth_cm": 60,
+      "diam_mm": 15,
+      "snr_dB": 30.9,
+      "detectable": "YES"
+    },
+    {
+      "depth_cm": 60,
+      "diam_mm": 20,
+      "snr_dB": 35.9,
+      "detectable": "YES"
+    },
+    {
+      "depth_cm": 60,
+      "diam_mm": 25,
+      "snr_dB": 39.8,
+      "detectable": "YES"
+    },
+    {
+      "depth_cm": 60,
+      "diam_mm": 30,
+      "snr_dB": 43.0,
+      "detectable": "YES"
+    }
+  ]
+}

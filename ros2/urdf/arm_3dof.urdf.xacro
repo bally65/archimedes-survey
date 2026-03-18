@@ -1,0 +1,385 @@
+<?xml version="1.0"?>
+<!--
+  Archimedes Survey -- 3-DOF Probe Arm URDF (xacro)
+  ===================================================
+  座標系（手臂局部）：Z=上, X=前, Y=右
+  平台安裝點對應機器座標：X=156mm, Y=150mm, Z=225mm
+
+  關節：
+    j1_yaw      MG995    偏搖 ±60 deg  繞Z軸
+    j2_shoulder DS3218MG 俯仰 0-120 deg 繞Y軸
+    j3_elbow    MG996R   俯仰 0-135 deg 繞Y軸
+-->
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="archimedes_arm">
+
+  <!-- ═══════════════════════════════════════════════════
+       Properties / Constants
+  ═══════════════════════════════════════════════════ -->
+  <xacro:property name="pi"          value="3.14159265358979"/>
+  <xacro:property name="petg_density" value="1270"/>  <!-- kg/m³ -->
+
+  <!-- Link heights above platform (m) -->
+  <xacro:property name="base_h"      value="0.088"/>
+  <xacro:property name="turret_h"    value="0.050"/>
+  <xacro:property name="upper_arm_l" value="0.200"/>
+  <xacro:property name="forearm_l"   value="0.220"/>
+  <xacro:property name="probe_l"     value="0.200"/>
+
+  <!-- Servo body dimensions (m) -->
+  <xacro:property name="sv_w"  value="0.020"/>
+  <xacro:property name="sv_d"  value="0.040"/>
+  <xacro:property name="sv_h"  value="0.038"/>
+
+  <!-- ═══════════════════════════════════════════════════
+       Macro: box inertia
+  ═══════════════════════════════════════════════════ -->
+  <xacro:macro name="box_inertia" params="mass x y z">
+    <inertial>
+      <mass value="${mass}"/>
+      <inertia
+        ixx="${mass*(y*y+z*z)/12}"
+        iyy="${mass*(x*x+z*z)/12}"
+        izz="${mass*(x*x+y*y)/12}"
+        ixy="0" ixz="0" iyz="0"/>
+    </inertial>
+  </xacro:macro>
+
+  <xacro:macro name="cyl_inertia" params="mass r h">
+    <inertial>
+      <mass value="${mass}"/>
+      <inertia
+        ixx="${mass*(3*r*r+h*h)/12}"
+        iyy="${mass*(3*r*r+h*h)/12}"
+        izz="${mass*r*r/2}"
+        ixy="0" ixz="0" iyz="0"/>
+    </inertial>
+  </xacro:macro>
+
+  <!-- ═══════════════════════════════════════════════════
+       Macro: servo visual block
+  ═══════════════════════════════════════════════════ -->
+  <xacro:macro name="servo_visual" params="bw bd bh color">
+    <visual>
+      <geometry>
+        <box size="${bh} ${bw} ${bd}"/>
+      </geometry>
+      <material name="${color}">
+        <color rgba="0.15 0.15 0.15 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="${bh} ${bw} ${bd}"/>
+      </geometry>
+    </collision>
+  </xacro:macro>
+
+  <!-- ═══════════════════════════════════════════════════
+       LINK: world / platform reference
+  ═══════════════════════════════════════════════════ -->
+  <link name="world"/>
+
+  <joint name="world_to_base" type="fixed">
+    <parent link="world"/>
+    <child  link="base_link"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint>
+
+  <!-- ═══════════════════════════════════════════════════
+       LINK 1: base_link  (base mount housing, 80×80×88mm)
+  ═══════════════════════════════════════════════════ -->
+  <link name="base_link">
+    <!-- mass: 80×80×88mm PETG shell, ~4mm wall → estimate 180g -->
+    <xacro:box_inertia mass="0.180" x="0.080" y="0.080" z="0.088"/>
+    <visual>
+      <origin xyz="0 0 0.044" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.080 0.080 0.088"/>
+      </geometry>
+      <material name="dark_grey">
+        <color rgba="0.2 0.2 0.2 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0.044" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.080 0.080 0.088"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <!-- ═══════════════════════════════════════════════════
+       JOINT J1: Yaw (base → j1_turret), MG995
+  ═══════════════════════════════════════════════════ -->
+  <joint name="j1_yaw" type="revolute">
+    <parent link="base_link"/>
+    <child  link="j1_turret"/>
+    <!-- pivot at top of base housing + 8mm shaft boss -->
+    <origin xyz="0 0 0.096" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="${-60*pi/180}" upper="${60*pi/180}"
+           effort="1.27" velocity="${180*pi/180}"/>
+    <dynamics damping="0.01" friction="0.005"/>
+  </joint>
+
+  <!-- ═══════════════════════════════════════════════════
+       LINK 2: j1_turret  (yaw output disk + upper arm bracket)
+  ═══════════════════════════════════════════════════ -->
+  <link name="j1_turret">
+    <!-- disk r=35mm h=50mm ~80g -->
+    <xacro:cyl_inertia mass="0.080" r="0.035" h="0.050"/>
+    <visual>
+      <origin xyz="0 0 0.025" rpy="0 0 0"/>
+      <geometry>
+        <cylinder radius="0.035" length="0.050"/>
+      </geometry>
+      <material name="light_grey">
+        <color rgba="0.7 0.7 0.7 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0.025" rpy="0 0 0"/>
+      <geometry>
+        <cylinder radius="0.035" length="0.050"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <!-- ═══════════════════════════════════════════════════
+       JOINT J2: Shoulder Pitch (j1_turret → upper_arm), DS3218MG
+  ═══════════════════════════════════════════════════ -->
+  <joint name="j2_shoulder" type="revolute">
+    <parent link="j1_turret"/>
+    <child  link="upper_arm"/>
+    <!-- 50mm turret top = J2 pivot -->
+    <origin xyz="0 0 0.050" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="0" upper="${120*pi/180}"
+           effort="1.96" velocity="${120*pi/180}"/>
+    <dynamics damping="0.02" friction="0.01"/>
+  </joint>
+
+  <!-- ═══════════════════════════════════════════════════
+       LINK 3: upper_arm  (DS3218 housing 50×30×52mm + 200mm beam)
+  ═══════════════════════════════════════════════════ -->
+  <link name="upper_arm">
+    <!-- housing ~100g + beam ~60g = 160g -->
+    <xacro:box_inertia mass="0.160" x="0.028" y="0.052" z="0.226"/>
+    <!-- J2 servo housing -->
+    <visual>
+      <origin xyz="0 0 0.026" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.032 0.050 0.052"/>
+      </geometry>
+      <material name="servo_body">
+        <color rgba="0.1 0.1 0.1 1.0"/>
+      </material>
+    </visual>
+    <!-- beam 28×20×200mm, starts at housing end -->
+    <visual>
+      <origin xyz="0 0 ${0.052+0.100}" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.020 0.028 0.200"/>
+      </geometry>
+      <material name="arm_orange">
+        <color rgba="0.9 0.45 0.0 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0.113" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.032 0.052 0.226"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <!-- ═══════════════════════════════════════════════════
+       JOINT J3: Elbow Pitch (upper_arm → forearm), MG996R
+  ═══════════════════════════════════════════════════ -->
+  <joint name="j3_elbow" type="revolute">
+    <parent link="upper_arm"/>
+    <child  link="forearm"/>
+    <!-- J3 at end of upper arm (housing 52mm + beam 200mm) -->
+    <origin xyz="0 0 0.252" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit lower="0" upper="${135*pi/180}"
+           effort="1.27" velocity="${150*pi/180}"/>
+    <dynamics damping="0.015" friction="0.008"/>
+  </joint>
+
+  <!-- ═══════════════════════════════════════════════════
+       LINK 4: forearm  (MG996R housing 48×28×50mm + 220mm beam)
+  ═══════════════════════════════════════════════════ -->
+  <link name="forearm">
+    <!-- housing ~90g + beam ~50g = 140g -->
+    <xacro:box_inertia mass="0.140" x="0.025" y="0.048" z="0.270"/>
+    <!-- J3 servo housing -->
+    <visual>
+      <origin xyz="0 0 0.025" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.030 0.048 0.050"/>
+      </geometry>
+      <material name="servo_body"/>
+    </visual>
+    <!-- forearm beam 25×18×220mm -->
+    <visual>
+      <origin xyz="0 0 ${0.050+0.110}" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.018 0.025 0.220"/>
+      </geometry>
+      <material name="arm_orange"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0.135" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.030 0.048 0.270"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <!-- ═══════════════════════════════════════════════════
+       JOINT: forearm → probe_holder (fixed)
+  ═══════════════════════════════════════════════════ -->
+  <joint name="forearm_to_probe_holder" type="fixed">
+    <parent link="forearm"/>
+    <child  link="probe_holder"/>
+    <origin xyz="0 0 0.270" rpy="0 0 0"/>
+  </joint>
+
+  <!-- ═══════════════════════════════════════════════════
+       LINK 5: probe_holder  (clamp 38×28×32mm)
+  ═══════════════════════════════════════════════════ -->
+  <link name="probe_holder">
+    <xacro:box_inertia mass="0.025" x="0.038" y="0.028" z="0.032"/>
+    <visual>
+      <origin xyz="0 0 0.016" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.038 0.028 0.032"/>
+      </geometry>
+      <material name="clamp_silver">
+        <color rgba="0.75 0.75 0.80 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0.016" rpy="0 0 0"/>
+      <geometry>
+        <box size="0.038 0.028 0.032"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <!-- ═══════════════════════════════════════════════════
+       JOINT: probe_holder → probe (fixed)
+  ═══════════════════════════════════════════════════ -->
+  <joint name="probe_holder_to_probe" type="fixed">
+    <parent link="probe_holder"/>
+    <child  link="probe"/>
+    <origin xyz="0 0 0.037" rpy="0 0 0"/>
+  </joint>
+
+  <!-- ═══════════════════════════════════════════════════
+       LINK 6: probe  (10mm SS tube 180mm + 20mm cone tip)
+  ═══════════════════════════════════════════════════ -->
+  <link name="probe">
+    <!-- stainless steel 10mm OD 7mm ID 200mm: ~65g -->
+    <xacro:cyl_inertia mass="0.065" r="0.005" h="0.200"/>
+    <visual>
+      <origin xyz="0 0 0.100" rpy="0 0 0"/>
+      <geometry>
+        <cylinder radius="0.005" length="0.200"/>
+      </geometry>
+      <material name="stainless">
+        <color rgba="0.85 0.85 0.88 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0.100" rpy="0 0 0"/>
+      <geometry>
+        <cylinder radius="0.005" length="0.200"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <!-- ═══════════════════════════════════════════════════
+       JOINT: probe_holder → transducer_mount  (j4 tilt ±30°)
+       MG90S micro servo, drives transducer pitch for active scan
+  ═══════════════════════════════════════════════════ -->
+  <joint name="j4_tilt" type="revolute">
+    <parent link="probe_holder"/>
+    <child  link="transducer_mount"/>
+    <origin xyz="0 0 0.037" rpy="0 0 0"/>
+    <axis   xyz="1 0 0"/>   <!-- pitch around local X -->
+    <limit  lower="-0.5236" upper="0.5236"
+            effort="0.18"   velocity="3.14"/>  <!-- MG90S: 1.8kg·cm@4.8V -->
+    <dynamics damping="0.1" friction="0.05"/>
+  </joint>
+
+  <!-- ═══════════════════════════════════════════════════
+       LINK 7: transducer_mount
+       DS3218-free design: MG90S micro servo + 20mm clamp
+       Mass: transducer(~85g) + clamp(~30g) + servo(9g) = ~124g
+  ═══════════════════════════════════════════════════ -->
+  <link name="transducer_mount">
+    <xacro:cyl_inertia mass="0.124" r="0.010" h="0.028"/>
+    <visual>
+      <origin xyz="0 -0.028 0" rpy="1.5708 0 0"/>
+      <geometry>
+        <cylinder radius="0.014" length="0.028"/>
+      </geometry>
+      <material name="dark_grey">
+        <color rgba="0.25 0.25 0.25 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 -0.028 0" rpy="1.5708 0 0"/>
+      <geometry>
+        <cylinder radius="0.014" length="0.028"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <!-- ═══════════════════════════════════════════════════
+       Transmission (ros_control effort interface)
+  ═══════════════════════════════════════════════════ -->
+  <xacro:macro name="servo_transmission" params="joint_name actuator_name">
+    <transmission name="${joint_name}_trans">
+      <type>transmission_interface/SimpleTransmission</type>
+      <joint name="${joint_name}">
+        <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+      </joint>
+      <actuator name="${actuator_name}">
+        <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+        <mechanicalReduction>1</mechanicalReduction>
+      </actuator>
+    </transmission>
+  </xacro:macro>
+
+  <xacro:servo_transmission joint_name="j1_yaw"      actuator_name="mg995_j1"/>
+  <xacro:servo_transmission joint_name="j2_shoulder" actuator_name="ds3218_j2"/>
+  <xacro:servo_transmission joint_name="j3_elbow"    actuator_name="mg996r_j3"/>
+  <xacro:servo_transmission joint_name="j4_tilt"     actuator_name="mg90s_j4"/>
+
+  <!-- ═══════════════════════════════════════════════════
+       Gazebo plugins (ros_control + camera)
+  ═══════════════════════════════════════════════════ -->
+  <gazebo>
+    <plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
+      <robotNamespace>/archimedes_arm</robotNamespace>
+      <robotSimType>gazebo_ros_control/DefaultRobotHWSim</robotSimType>
+    </plugin>
+  </gazebo>
+
+  <gazebo reference="base_link">
+    <material>Gazebo/DarkGrey</material>
+  </gazebo>
+  <gazebo reference="upper_arm">
+    <material>Gazebo/Orange</material>
+  </gazebo>
+  <gazebo reference="forearm">
+    <material>Gazebo/Orange</material>
+  </gazebo>
+  <gazebo reference="probe">
+    <material>Gazebo/Grey</material>
+  </gazebo>
+
+</robot>

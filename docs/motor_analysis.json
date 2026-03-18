@@ -1,0 +1,66 @@
+[
+  {
+    "rpm": 20,
+    "speed_m_min": 1.75,
+    "omega_rad_s": 2.094,
+    "torque_Nm": 2.879,
+    "P_motor_W": 6.0,
+    "P_total_W": 24.1
+  },
+  {
+    "rpm": 30,
+    "speed_m_min": 2.63,
+    "omega_rad_s": 3.142,
+    "torque_Nm": 2.879,
+    "P_motor_W": 9.0,
+    "P_total_W": 36.2
+  },
+  {
+    "rpm": 40,
+    "speed_m_min": 3.51,
+    "omega_rad_s": 4.189,
+    "torque_Nm": 2.879,
+    "P_motor_W": 12.1,
+    "P_total_W": 48.2
+  },
+  {
+    "rpm": 50,
+    "speed_m_min": 4.39,
+    "omega_rad_s": 5.236,
+    "torque_Nm": 2.879,
+    "P_motor_W": 15.1,
+    "P_total_W": 60.3
+  },
+  {
+    "rpm": 60,
+    "speed_m_min": 5.27,
+    "omega_rad_s": 6.283,
+    "torque_Nm": 2.879,
+    "P_motor_W": 18.1,
+    "P_total_W": 72.4
+  },
+  {
+    "rpm": 80,
+    "speed_m_min": 7.02,
+    "omega_rad_s": 8.378,
+    "torque_Nm": 2.879,
+    "P_motor_W": 24.1,
+    "P_total_W": 96.5
+  },
+  {
+    "rpm": 100,
+    "speed_m_min": 8.77,
+    "omega_rad_s": 10.472,
+    "torque_Nm": 2.879,
+    "P_motor_W": 30.2,
+    "P_total_W": 120.6
+  },
+  {
+    "rpm": 120,
+    "speed_m_min": 10.53,
+    "omega_rad_s": 12.566,
+    "torque_Nm": 2.879,
+    "P_motor_W": 36.2,
+    "P_total_W": 144.7
+  }
+]

@@ -1,0 +1,106 @@
+# Archimedes Survey Arm -- ROS2 Control Configuration
+# Hardware: PCA9685 I2C servo driver → RPi4
+# Controller: JointTrajectoryController (position mode)
+
+controller_manager:
+  ros__parameters:
+    update_rate: 50  # Hz
+
+    # Available controllers
+    arm_trajectory_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
+
+    joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+
+    # Individual joint position controllers (for manual testing)
+    j1_yaw_controller:
+      type: position_controllers/JointGroupPositionController
+
+    j2_shoulder_controller:
+      type: position_controllers/JointGroupPositionController
+
+    j3_elbow_controller:
+      type: position_controllers/JointGroupPositionController
+
+    j4_tilt_controller:
+      type: position_controllers/JointGroupPositionController
+
+
+# Main trajectory controller (used for auto deployment)
+arm_trajectory_controller:
+  ros__parameters:
+    joints:
+      - j1_yaw
+      - j2_shoulder
+      - j3_elbow
+      - j4_tilt
+
+    command_interfaces:
+      - position
+
+    state_interfaces:
+      - position
+      - velocity
+
+    state_publish_rate: 50.0
+    action_monitor_rate: 20.0
+    allow_partial_joints_goal: false
+    open_loop_control: true   # No encoder feedback (servo internal only)
+
+    # PID gains (tune after hardware test)
+    gains:
+      j1_yaw:
+        p: 50.0
+        i: 0.5
+        d: 5.0
+        i_clamp: 1.0
+      j2_shoulder:
+        p: 80.0
+        i: 0.5
+        d: 8.0
+        i_clamp: 1.5
+      j3_elbow:
+        p: 60.0
+        i: 0.5
+        d: 6.0
+        i_clamp: 1.0
+      j4_tilt:
+        p: 30.0
+        i: 0.2
+        d: 2.0
+        i_clamp: 0.5
+
+    # Trajectory constraints
+    constraints:
+      stopped_velocity_tolerance: 0.05
+      goal_time: 0.0  # no timeout
+      j1_yaw:
+        trajectory: 0.1
+        goal: 0.05
+      j2_shoulder:
+        trajectory: 0.1
+        goal: 0.05
+      j3_elbow:
+        trajectory: 0.1
+        goal: 0.05
+      j4_tilt:
+        trajectory: 0.15
+        goal: 0.08
+
+
+# Hardware interface parameters (PCA9685)
+pca9685_hardware_interface:
+  ros__parameters:
+    i2c_bus: 1          # /dev/i2c-1 on RPi4
+    i2c_address: 0x40   # PCA9685 default
+    pwm_frequency: 50   # Hz (standard servo)
+    # Channel mapping: joint → PCA9685 channel
+    channel_map:
+      j1_yaw:      0
+      j2_shoulder: 1
+      j3_elbow:    2
+      j4_tilt:     3    # MG90S micro servo, PCA9685 ch3
+    # Pulse width mapping (μs): 500–2500μs = 0°–180°
+    pulse_min_us: 500
+    pulse_max_us: 2500

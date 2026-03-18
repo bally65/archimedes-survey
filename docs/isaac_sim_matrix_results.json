@@ -1,0 +1,1352 @@
+[
+  {
+    "scenario": "Straight Forward",
+    "moisture_pct": 10,
+    "payload_kg": 0,
+    "total_mass_kg": 22.0,
+    "forward_m": 0.674,
+    "lateral_m": 0.0,
+    "speed_m_min": 2.7,
+    "spin_deg_s": 0.0
+  },
+  {
+    "scenario": "Straight Reverse",
+    "moisture_pct": 10,
+    "payload_kg": 0,
+    "total_mass_kg": 22.0,
+    "forward_m": 0.674,
+    "lateral_m": 0.0,
+    "speed_m_min": 2.7,
+    "spin_deg_s": 0.0
+  },
+  {
+    "scenario": "Wind 40 km/h",
+    "moisture_pct": 10,
+    "payload_kg": 0,
+    "total_mass_kg": 22.0,
+    "forward_m": 0.674,
+    "lateral_m": 0.0,
+    "speed_m_min": 2.7,
+    "spin_deg_s": 0.0
+  },
+  {
+    "scenario": "Arc Left R=1m",
+    "moisture_pct": 10,
+    "payload_kg": 0,
+    "total_mass_kg": 22.0,
+    "forward_m": 0.597,
+    "lateral_m": 0.198,
+    "speed_m_min": 2.52,
+    "spin_deg_s": 2.44
+  },
+  {
+    "scenario": "Arc Right R=1m",
+    "moisture_pct": 10,
+    "payload_kg": 0,
+    "total_mass_kg": 22.0,
+    "forward_m": 0.597,
+    "lateral_m": 0.198,
+    "speed_m_min": 2.52,
+    "spin_deg_s": 2.44
+  },
+  {
+    "scenario": "Spin CW",
+    "moisture_pct": 10,
+    "payload_kg": 0,
+    "total_mass_kg": 22.0,
+    "forward_m": 0.0,
+    "lateral_m": 0.0,
+    "speed_m_min": 0.0,
+    "spin_deg_s": 10.35
+  },
+  {
+    "scenario": "Spin CCW",
+    "moisture_pct": 10,
+    "payload_kg": 0,
+    "total_mass_kg": 22.0,
+    "forward_m": 0.0,
+    "lateral_m": 0.0,
+    "speed_m_min": 0.0,
+    "spin_deg_s": 10.35
+  },
+  {
+    "scenario": "Strafe Left",
+    "moisture_pct": 10,
+    "payload_kg": 0,
+    "total_mass_kg": 22.0,
+    "forward_m": 0.0,
+    "lateral_m": 0.372,
+    "speed_m_min": 1.49,
+    "spin_deg_s": 0.0
+  },
+  {
+    "scenario": "Strafe Right",
+    "moisture_pct": 10,
+    "payload_kg": 0,
+    "total_mass_kg": 22.0,
+    "forward_m": 0.0,
+    "lateral_m": 0.372,
+    "speed_m_min": 1.49,
+    "spin_deg_s": 0.0
+  },
+  {
+    "scenario": "Straight Forward",
+    "moisture_pct": 10,
+    "payload_kg": 5,
+    "total_mass_kg": 27.0,
+    "forward_m": 0.662,
+    "lateral_m": 0.0,
+    "speed_m_min": 2.65,
+    "spin_deg_s": 0.0
+  },
+  {
+    "scenario": "Straight Reverse",
+    "moisture_pct": 10,
+    "payload_kg": 5,
+    "total_mass_kg": 27.0,
+    "forward_m": 0.662,
+    "lateral_m": 0.0,
+    "speed_m_min": 2.65,
+    "spin_deg_s": 0.0
+  },
+  {
+    "scenario": "Wind 40 km/h",
+    "moisture_pct": 10,
+    "payload_kg": 5,
+    "total_mass_kg": 27.0,
+    "forward_m": 0.662,
+    "lateral_m": 0.0,
+    "speed_m_min": 2.65,
+    "spin_deg_s": 0.0
+  },
+  {
+    "scenario": "Arc Left R=1m",
+    "moisture_pct": 10,
+    "payload_kg": 5,
+    "total_mass_kg": 27.0,
+    "forward_m": 0.586,
+    "lateral_m": 0.194,
+    "speed_m_min": 2.47,
+    "spin_deg_s": 2.4
+  },
+  {
+    "scenario": "Arc Right R=1m",
+    "moisture_pct": 10,
+    "payload_kg": 5,
+    "total_mass_kg": 27.0,
+    "forward_m": 0.586,
+    "lateral_m": 0.194,
+    "speed_m_min": 2.47,
+    "spin_deg_s": 2.4
+  },
+  {
+    "scenario": "Spin CW",
+    "moisture_pct": 10,
+    "payload_kg": 5,
+    "total_mass_kg": 27.0,
+    "forward_m": 0.0,
+    "lateral_m": 0.0,
+    "speed_m_min": 0.0,
+    "spin_deg_s": 10.16
+  },
+  {
+    "scenario": "Spin CCW",
+    "moisture_pct": 10,
+    "payload_kg": 5,
+    "total_mass_kg": 27.0,
+    "forward_m": 0.0,
+    "lateral_m": 0.0,
+    "speed_m_min": 0.0,
+    "spin_deg_s": 10.16
+  },
+  {
+    "scenario": "Strafe Left",
+    "moisture_pct": 10,
+    "payload_kg": 5,
+    "total_mass_kg": 27.0,
+    "forward_m": 0.0,
+    "lateral_m": 0.365,
+    "speed_m_min": 1.46,
+    "spin_deg_s": 0.0
+  },
+  {
+    "scenario": "Strafe Right",
+    "moisture_pct": 10,
+    "payload_kg": 5,
+    "total_mass_kg": 27.0,
+    "forward_m": 0.0,
+    "lateral_m": 0.365,
+    "speed_m_min": 1.46,
+    "spin_deg_s": 0.0
+  },
+  {
+    "scenario": "Straight Forward",
+    "moisture_pct": 10,
+    "payload_kg": 10,
+    "total_mass_kg": 32.0,
+    "forward_m": 0.65,
+    "lateral_m": 0.0,
+    "speed_m_min": 2.6,
+    "spin_deg_s": 0.0
+  },
+  {
+    "scenario": "Straight Reverse",
+    "moisture_pct": 10,
+    "payload_kg": 10,
+    "total_mass_kg": 32.0,
+    "forward_m": 0.65,
+    "lateral_m": 0.0,
+    "speed_m_min": 2.6,
+    "spin_deg_s": 0.0
+  },
+  {
+    "scenario": "Wind 40 km/h",
+    "moisture_pct": 10,
+    "payload_kg": 10,
+    "total_mass_kg": 32.0,
+    "forward_m": 0.65,
+    "lateral_m": 0.0,
+    "speed_m_min": 2.6,
+    "spin_deg_s": 0.0
+  },
+  {
+    "scenario": "Arc Left R=1m",
+    "moisture_pct": 10,
+    "payload_kg": 10,
+    "total_mass_kg": 32.0,
+    "forward_m": 0.576,
+    "lateral_m": 0.191,
+    "speed_m_min": 2.43,
+    "spin_deg_s": 2.35
+  },
+  {
+    "scenario": "Arc Right R=1m",
+    "moisture_pct": 10,
+    "payload_kg": 10,
+    "total_mass_kg": 32.0,
+    "forward_m": 0.576,
+    "lateral_m": 0.191,
+    "speed_m_min": 2.43,
+    "spin_deg_s": 2.35
+  },
+  {
+    "scenario": "Spin CW",
+    "moisture_pct": 10,
+    "payload_kg": 10,
+    "total_mass_kg": 32.0,
+    "forward_m": 0.0,
+    "lateral_m": 0.0,
+    "speed_m_min": 0.0,
+    "spin_deg_s": 9.98
+  },
+  {
+    "scenario": "Spin CCW",
+    "moisture_pct": 10,
+    "payload_kg": 10,
+    "total_mass_kg": 32.0,
+    "forward_m": 0.0,
+    "lateral_m": 0.0,
+    "speed_m_min": 0.0,
+    "spin_deg_s": 9.98
+  },
+  {
+    "scenario": "Strafe Left",
+    "moisture_pct": 10,
+    "payload_kg": 10,
+    "total_mass_kg": 32.0,
+    "forward_m": 0.0,
+    "lateral_m": 0.359,
+    "speed_m_min": 1.44,
+    "spin_deg_s": 0.0
+  },
+  {
+    "scenario": "Strafe Right",
+    "moisture_pct": 10,
+    "payload_kg": 10,
+    "total_mass_kg": 32.0,
+    "forward_m": 0.0,
+    "lateral_m": 0.359,
+    "speed_m_min": 1.44,
+    "spin_deg_s": 0.0
+  },
+  {
+    "scenario": "Straight Forward",
+    "moisture_pct": 30,
+    "payload_kg": 0,
+    "total_mass_kg": 22.0,
+    "forward_m": 1.045,
+    "lateral_m": 0.0,
+    "speed_m_min": 4.18,
+    "spin_deg_s": 0.0
+  },
+  {
+    "scenario": "Straight Reverse",
+    "moisture_pct": 30,
+    "payload_kg": 0,
+    "total_mass_kg": 22.0,
+    "forward_m": 1.045,
+    "lateral_m": 0.0,
+    "speed_m_min": 4.18,
+    "spin_deg_s": 0.0
+  },
+  {
+    "scenario": "Wind 40 km/h",
+    "moisture_pct": 30,
+    "payload_kg": 0,
+    "total_mass_kg": 22.0,
+    "forward_m": 1.045,
+    "lateral_m": 0.0,
+    "speed_m_min": 4.18,
+    "spin_deg_s": 0.0
+  },
+  {
+    "scenario": "Arc Left R=1m",
+    "moisture_pct": 30,
+    "payload_kg": 0,
+    "total_mass_kg": 22.0,
+    "forward_m": 0.837,
+    "lateral_m": 0.453,
+    "speed_m_min": 3.81,
+    "spin_deg_s": 3.79
+  },
+  {
+    "scenario": "Arc Right R=1m",
+    "moisture_pct": 30,
+    "payload_kg": 0,
+    "total_mass_kg": 22.0,
+    "forward_m": 0.837,
+    "lateral_m": 0.453,
+    "speed_m_min": 3.81,
+    "spin_deg_s": 3.79
+  },
+  {
+    "scenario": "Spin CW",
+    "moisture_pct": 30,
+    "payload_kg": 0,
+    "total_mass_kg": 22.0,
+    "forward_m": 0.0,
+    "lateral_m": 0.0,
+    "speed_m_min": 0.0,
+    "spin_deg_s": 16.04
+  },
+  {
+    "scenario": "Spin CCW",
+    "moisture_pct": 30,
+    "payload_kg": 0,
+    "total_mass_kg": 22.0,
+    "forward_m": 0.0,
+    "lateral_m": 0.0,
+    "speed_m_min": 0.0,
+    "spin_deg_s": 16.04
+  },
+  {
+    "scenario": "Strafe Left",
+    "moisture_pct": 30,
+    "payload_kg": 0,
+    "total_mass_kg": 22.0,
+    "forward_m": 0.0,
+    "lateral_m": 0.576,
+    "speed_m_min": 2.3,
+    "spin_deg_s": 0.0
+  },
+  {
+    "scenario": "Strafe Right",
+    "moisture_pct": 30,
+    "payload_kg": 0,
+    "total_mass_kg": 22.0,
+    "forward_m": 0.0,
+    "lateral_m": 0.576,
+    "speed_m_min": 2.3,
+    "spin_deg_s": 0.0
+  },
+  {
+    "scenario": "Straight Forward",
+    "moisture_pct": 30,
+    "payload_kg": 5,
+    "total_mass_kg": 27.0,
+    "forward_m": 1.026,
+    "lateral_m": 0.0,
+    "speed_m_min": 4.1,
+    "spin_deg_s": 0.0
+  },
+  {
+    "scenario": "Straight Reverse",
+    "moisture_pct": 30,
+    "payload_kg": 5,
+    "total_mass_kg": 27.0,
+    "forward_m": 1.026,
+    "lateral_m": 0.0,
+    "speed_m_min": 4.1,
+    "spin_deg_s": 0.0
+  },
+  {
+    "scenario": "Wind 40 km/h",
+    "moisture_pct": 30,
+    "payload_kg": 5,
+    "total_mass_kg": 27.0,
+    "forward_m": 1.026,
+    "lateral_m": 0.0,
+    "speed_m_min": 4.1,
+    "spin_deg_s": 0.0
+  },
+  {
+    "scenario": "Arc Left R=1m",
+    "moisture_pct": 30,
+    "payload_kg": 5,
+    "total_mass_kg": 27.0,
+    "forward_m": 0.822,
+    "lateral_m": 0.445,
+    "speed_m_min": 3.74,
+    "spin_deg_s": 3.72
+  },
+  {
+    "scenario": "Arc Right R=1m",
+    "moisture_pct": 30,
+    "payload_kg": 5,
+    "total_mass_kg": 27.0,
+    "forward_m": 0.822,
+    "lateral_m": 0.445,
+    "speed_m_min": 3.74,
+    "spin_deg_s": 3.72
+  },
+  {
+    "scenario": "Spin CW",
+    "moisture_pct": 30,
+    "payload_kg": 5,
+    "total_mass_kg": 27.0,
+    "forward_m": 0.0,
+    "lateral_m": 0.0,
+    "speed_m_min": 0.0,
+    "spin_deg_s": 15.75
+  },
+  {
+    "scenario": "Spin CCW",
+    "moisture_pct": 30,
+    "payload_kg": 5,
+    "total_mass_kg": 27.0,
+    "forward_m": 0.0,
+    "lateral_m": 0.0,
+    "speed_m_min": 0.0,
+    "spin_deg_s": 15.75
+  },
+  {
+    "scenario": "Strafe Left",
+    "moisture_pct": 30,
+    "payload_kg": 5,
+    "total_mass_kg": 27.0,
+    "forward_m": 0.0,
+    "lateral_m": 0.566,
+    "speed_m_min": 2.26,
+    "spin_deg_s": 0.0
+  },
+  {
+    "scenario": "Strafe Right",
+    "moisture_pct": 30,
+    "payload_kg": 5,
+    "total_mass_kg": 27.0,
+    "forward_m": 0.0,
+    "lateral_m": 0.566,
+    "speed_m_min": 2.26,
+    "spin_deg_s": 0.0
+  },
+  {
+    "scenario": "Straight Forward",
+    "moisture_pct": 30,
+    "payload_kg": 10,
+    "total_mass_kg": 32.0,
+    "forward_m": 1.007,
+    "lateral_m": 0.0,
+    "speed_m_min": 4.03,
+    "spin_deg_s": 0.0
+  },
+  {
+    "scenario": "Straight Reverse",
+    "moisture_pct": 30,
+    "payload_kg": 10,
+    "total_mass_kg": 32.0,
+    "forward_m": 1.007,
+    "lateral_m": 0.0,
+    "speed_m_min": 4.03,
+    "spin_deg_s": 0.0
+  },
+  {
+    "scenario": "Wind 40 km/h",
+    "moisture_pct": 30,
+    "payload_kg": 10,
+    "total_mass_kg": 32.0,
+    "forward_m": 1.007,
+    "lateral_m": 0.0,
+    "speed_m_min": 4.03,
+    "spin_deg_s": 0.0
+  },
+  {
+    "scenario": "Arc Left R=1m",
+    "moisture_pct": 30,
+    "payload_kg": 10,
+    "total_mass_kg": 32.0,
+    "forward_m": 0.807,
+    "lateral_m": 0.437,
+    "speed_m_min": 3.67,
+    "spin_deg_s": 3.65
+  },
+  {
+    "scenario": "Arc Right R=1m",
+    "moisture_pct": 30,
+    "payload_kg": 10,
+    "total_mass_kg": 32.0,
+    "forward_m": 0.807,
+    "lateral_m": 0.437,
+    "speed_m_min": 3.67,
+    "spin_deg_s": 3.65
+  },
+  {
+    "scenario": "Spin CW",
+    "moisture_pct": 30,
+    "payload_kg": 10,
+    "total_mass_kg": 32.0,
+    "forward_m": 0.0,
+    "lateral_m": 0.0,
+    "speed_m_min": 0.0,
+    "spin_deg_s": 15.46
+  },
+  {
+    "scenario": "Spin CCW",
+    "moisture_pct": 30,
+    "payload_kg": 10,
+    "total_mass_kg": 32.0,
+    "forward_m": 0.0,
+    "lateral_m": 0.0,
+    "speed_m_min": 0.0,
+    "spin_deg_s": 15.46
+  },
+  {
+    "scenario": "Strafe Left",
+    "moisture_pct": 30,
+    "payload_kg": 10,
+    "total_mass_kg": 32.0,
+    "forward_m": 0.0,
+    "lateral_m": 0.555,
+    "speed_m_min": 2.22,
+    "spin_deg_s": 0.0
+  },
+  {
+    "scenario": "Strafe Right",
+    "moisture_pct": 30,
+    "payload_kg": 10,
+    "total_mass_kg": 32.0,
+    "forward_m": 0.0,
+    "lateral_m": 0.555,
+    "speed_m_min": 2.22,
+    "spin_deg_s": 0.0
+  },
+  {
+    "scenario": "Straight Forward",
+    "moisture_pct": 50,
+    "payload_kg": 0,
+    "total_mass_kg": 22.0,
+    "forward_m": 1.315,
+    "lateral_m": 0.0,
+    "speed_m_min": 5.26,
+    "spin_deg_s": 0.0
+  },
+  {
+    "scenario": "Straight Reverse",
+    "moisture_pct": 50,
+    "payload_kg": 0,
+    "total_mass_kg": 22.0,
+    "forward_m": 1.315,
+    "lateral_m": 0.0,
+    "speed_m_min": 5.26,
+    "spin_deg_s": 0.0
+  },
+  {
+    "scenario": "Wind 40 km/h",
+    "moisture_pct": 50,
+    "payload_kg": 0,
+    "total_mass_kg": 22.0,
+    "forward_m": 1.315,
+    "lateral_m": 0.0,
+    "speed_m_min": 5.26,
+    "spin_deg_s": 0.0
+  },
+  {
+    "scenario": "Arc Left R=1m",
+    "moisture_pct": 50,
+    "payload_kg": 0,
+    "total_mass_kg": 22.0,
+    "forward_m": 0.948,
+    "lateral_m": 0.682,
+    "speed_m_min": 4.67,
+    "spin_deg_s": 4.76
+  },
+  {
+    "scenario": "Arc Right R=1m",
+    "moisture_pct": 50,
+    "payload_kg": 0,
+    "total_mass_kg": 22.0,
+    "forward_m": 0.948,
+    "lateral_m": 0.682,
+    "speed_m_min": 4.67,
+    "spin_deg_s": 4.76
+  },
+  {
+    "scenario": "Spin CW",
+    "moisture_pct": 50,
+    "payload_kg": 0,
+    "total_mass_kg": 22.0,
+    "forward_m": 0.0,
+    "lateral_m": 0.0,
+    "speed_m_min": 0.0,
+    "spin_deg_s": 20.17
+  },
+  {
+    "scenario": "Spin CCW",
+    "moisture_pct": 50,
+    "payload_kg": 0,
+    "total_mass_kg": 22.0,
+    "forward_m": 0.0,
+    "lateral_m": 0.0,
+    "speed_m_min": 0.0,
+    "spin_deg_s": 20.17
+  },
+  {
+    "scenario": "Strafe Left",
+    "moisture_pct": 50,
+    "payload_kg": 0,
+    "total_mass_kg": 22.0,
+    "forward_m": 0.0,
+    "lateral_m": 0.725,
+    "speed_m_min": 2.9,
+    "spin_deg_s": 0.0
+  },
+  {
+    "scenario": "Strafe Right",
+    "moisture_pct": 50,
+    "payload_kg": 0,
+    "total_mass_kg": 22.0,
+    "forward_m": 0.0,
+    "lateral_m": 0.725,
+    "speed_m_min": 2.9,
+    "spin_deg_s": 0.0
+  },
+  {
+    "scenario": "Straight Forward",
+    "moisture_pct": 50,
+    "payload_kg": 5,
+    "total_mass_kg": 27.0,
+    "forward_m": 1.291,
+    "lateral_m": 0.0,
+    "speed_m_min": 5.17,
+    "spin_deg_s": 0.0
+  },
+  {
+    "scenario": "Straight Reverse",
+    "moisture_pct": 50,
+    "payload_kg": 5,
+    "total_mass_kg": 27.0,
+    "forward_m": 1.291,
+    "lateral_m": 0.0,
+    "speed_m_min": 5.17,
+    "spin_deg_s": 0.0
+  },
+  {
+    "scenario": "Wind 40 km/h",
+    "moisture_pct": 50,
+    "payload_kg": 5,
+    "total_mass_kg": 27.0,
+    "forward_m": 1.291,
+    "lateral_m": 0.0,
+    "speed_m_min": 5.17,
+    "spin_deg_s": 0.0
+  },
+  {
+    "scenario": "Arc Left R=1m",
+    "moisture_pct": 50,
+    "payload_kg": 5,
+    "total_mass_kg": 27.0,
+    "forward_m": 0.931,
+    "lateral_m": 0.67,
+    "speed_m_min": 4.59,
+    "spin_deg_s": 4.67
+  },
+  {
+    "scenario": "Arc Right R=1m",
+    "moisture_pct": 50,
+    "payload_kg": 5,
+    "total_mass_kg": 27.0,
+    "forward_m": 0.931,
+    "lateral_m": 0.67,
+    "speed_m_min": 4.59,
+    "spin_deg_s": 4.67
+  },
+  {
+    "scenario": "Spin CW",
+    "moisture_pct": 50,
+    "payload_kg": 5,
+    "total_mass_kg": 27.0,
+    "forward_m": 0.0,
+    "lateral_m": 0.0,
+    "speed_m_min": 0.0,
+    "spin_deg_s": 19.81
+  },
+  {
+    "scenario": "Spin CCW",
+    "moisture_pct": 50,
+    "payload_kg": 5,
+    "total_mass_kg": 27.0,
+    "forward_m": 0.0,
+    "lateral_m": 0.0,
+    "speed_m_min": 0.0,
+    "spin_deg_s": 19.81
+  },
+  {
+    "scenario": "Strafe Left",
+    "moisture_pct": 50,
+    "payload_kg": 5,
+    "total_mass_kg": 27.0,
+    "forward_m": 0.0,
+    "lateral_m": 0.712,
+    "speed_m_min": 2.85,
+    "spin_deg_s": 0.0
+  },
+  {
+    "scenario": "Strafe Right",
+    "moisture_pct": 50,
+    "payload_kg": 5,
+    "total_mass_kg": 27.0,
+    "forward_m": 0.0,
+    "lateral_m": 0.712,
+    "speed_m_min": 2.85,
+    "spin_deg_s": 0.0
+  },
+  {
+    "scenario": "Straight Forward",
+    "moisture_pct": 50,
+    "payload_kg": 10,
+    "total_mass_kg": 32.0,
+    "forward_m": 1.268,
+    "lateral_m": 0.0,
+    "speed_m_min": 5.07,
+    "spin_deg_s": 0.0
+  },
+  {
+    "scenario": "Straight Reverse",
+    "moisture_pct": 50,
+    "payload_kg": 10,
+    "total_mass_kg": 32.0,
+    "forward_m": 1.268,
+    "lateral_m": 0.0,
+    "speed_m_min": 5.07,
+    "spin_deg_s": 0.0
+  },
+  {
+    "scenario": "Wind 40 km/h",
+    "moisture_pct": 50,
+    "payload_kg": 10,
+    "total_mass_kg": 32.0,
+    "forward_m": 1.268,
+    "lateral_m": 0.0,
+    "speed_m_min": 5.07,
+    "spin_deg_s": 0.0
+  },
+  {
+    "scenario": "Arc Left R=1m",
+    "moisture_pct": 50,
+    "payload_kg": 10,
+    "total_mass_kg": 32.0,
+    "forward_m": 0.914,
+    "lateral_m": 0.658,
+    "speed_m_min": 4.5,
+    "spin_deg_s": 4.59
+  },
+  {
+    "scenario": "Arc Right R=1m",
+    "moisture_pct": 50,
+    "payload_kg": 10,
+    "total_mass_kg": 32.0,
+    "forward_m": 0.914,
+    "lateral_m": 0.658,
+    "speed_m_min": 4.5,
+    "spin_deg_s": 4.59
+  },
+  {
+    "scenario": "Spin CW",
+    "moisture_pct": 50,
+    "payload_kg": 10,
+    "total_mass_kg": 32.0,
+    "forward_m": 0.0,
+    "lateral_m": 0.0,
+    "speed_m_min": 0.0,
+    "spin_deg_s": 19.45
+  },
+  {
+    "scenario": "Spin CCW",
+    "moisture_pct": 50,
+    "payload_kg": 10,
+    "total_mass_kg": 32.0,
+    "forward_m": 0.0,
+    "lateral_m": 0.0,
+    "speed_m_min": 0.0,
+    "spin_deg_s": 19.45
+  },
+  {
+    "scenario": "Strafe Left",
+    "moisture_pct": 50,
+    "payload_kg": 10,
+    "total_mass_kg": 32.0,
+    "forward_m": 0.0,
+    "lateral_m": 0.699,
+    "speed_m_min": 2.8,
+    "spin_deg_s": 0.0
+  },
+  {
+    "scenario": "Strafe Right",
+    "moisture_pct": 50,
+    "payload_kg": 10,
+    "total_mass_kg": 32.0,
+    "forward_m": 0.0,
+    "lateral_m": 0.699,
+    "speed_m_min": 2.8,
+    "spin_deg_s": 0.0
+  },
+  {
+    "scenario": "Straight Forward",
+    "moisture_pct": 70,
+    "payload_kg": 0,
+    "total_mass_kg": 22.0,
+    "forward_m": 1.18,
+    "lateral_m": 0.0,
+    "speed_m_min": 4.72,
+    "spin_deg_s": 0.0
+  },
+  {
+    "scenario": "Straight Reverse",
+    "moisture_pct": 70,
+    "payload_kg": 0,
+    "total_mass_kg": 22.0,
+    "forward_m": 1.18,
+    "lateral_m": 0.0,
+    "speed_m_min": 4.72,
+    "spin_deg_s": 0.0
+  },
+  {
+    "scenario": "Wind 40 km/h",
+    "moisture_pct": 70,
+    "payload_kg": 0,
+    "total_mass_kg": 22.0,
+    "forward_m": 1.18,
+    "lateral_m": 0.0,
+    "speed_m_min": 4.72,
+    "spin_deg_s": 0.0
+  },
+  {
+    "scenario": "Arc Left R=1m",
+    "moisture_pct": 70,
+    "payload_kg": 0,
+    "total_mass_kg": 22.0,
+    "forward_m": 0.9,
+    "lateral_m": 0.564,
+    "speed_m_min": 4.25,
+    "spin_deg_s": 4.28
+  },
+  {
+    "scenario": "Arc Right R=1m",
+    "moisture_pct": 70,
+    "payload_kg": 0,
+    "total_mass_kg": 22.0,
+    "forward_m": 0.9,
+    "lateral_m": 0.564,
+    "speed_m_min": 4.25,
+    "spin_deg_s": 4.28
+  },
+  {
+    "scenario": "Spin CW",
+    "moisture_pct": 70,
+    "payload_kg": 0,
+    "total_mass_kg": 22.0,
+    "forward_m": 0.0,
+    "lateral_m": 0.0,
+    "speed_m_min": 0.0,
+    "spin_deg_s": 18.11
+  },
+  {
+    "scenario": "Spin CCW",
+    "moisture_pct": 70,
+    "payload_kg": 0,
+    "total_mass_kg": 22.0,
+    "forward_m": 0.0,
+    "lateral_m": 0.0,
+    "speed_m_min": 0.0,
+    "spin_deg_s": 18.11
+  },
+  {
+    "scenario": "Strafe Left",
+    "moisture_pct": 70,
+    "payload_kg": 0,
+    "total_mass_kg": 22.0,
+    "forward_m": 0.0,
+    "lateral_m": 0.65,
+    "speed_m_min": 2.6,
+    "spin_deg_s": 0.0
+  },
+  {
+    "scenario": "Strafe Right",
+    "moisture_pct": 70,
+    "payload_kg": 0,
+    "total_mass_kg": 22.0,
+    "forward_m": 0.0,
+    "lateral_m": 0.65,
+    "speed_m_min": 2.6,
+    "spin_deg_s": 0.0
+  },
+  {
+    "scenario": "Straight Forward",
+    "moisture_pct": 70,
+    "payload_kg": 5,
+    "total_mass_kg": 27.0,
+    "forward_m": 1.159,
+    "lateral_m": 0.0,
+    "speed_m_min": 4.64,
+    "spin_deg_s": 0.0
+  },
+  {
+    "scenario": "Straight Reverse",
+    "moisture_pct": 70,
+    "payload_kg": 5,
+    "total_mass_kg": 27.0,
+    "forward_m": 1.159,
+    "lateral_m": 0.0,
+    "speed_m_min": 4.64,
+    "spin_deg_s": 0.0
+  },
+  {
+    "scenario": "Wind 40 km/h",
+    "moisture_pct": 70,
+    "payload_kg": 5,
+    "total_mass_kg": 27.0,
+    "forward_m": 1.159,
+    "lateral_m": 0.0,
+    "speed_m_min": 4.64,
+    "spin_deg_s": 0.0
+  },
+  {
+    "scenario": "Arc Left R=1m",
+    "moisture_pct": 70,
+    "payload_kg": 5,
+    "total_mass_kg": 27.0,
+    "forward_m": 0.884,
+    "lateral_m": 0.554,
+    "speed_m_min": 4.17,
+    "spin_deg_s": 4.2
+  },
+  {
+    "scenario": "Arc Right R=1m",
+    "moisture_pct": 70,
+    "payload_kg": 5,
+    "total_mass_kg": 27.0,
+    "forward_m": 0.884,
+    "lateral_m": 0.554,
+    "speed_m_min": 4.17,
+    "spin_deg_s": 4.2
+  },
+  {
+    "scenario": "Spin CW",
+    "moisture_pct": 70,
+    "payload_kg": 5,
+    "total_mass_kg": 27.0,
+    "forward_m": 0.0,
+    "lateral_m": 0.0,
+    "speed_m_min": 0.0,
+    "spin_deg_s": 17.78
+  },
+  {
+    "scenario": "Spin CCW",
+    "moisture_pct": 70,
+    "payload_kg": 5,
+    "total_mass_kg": 27.0,
+    "forward_m": 0.0,
+    "lateral_m": 0.0,
+    "speed_m_min": 0.0,
+    "spin_deg_s": 17.78
+  },
+  {
+    "scenario": "Strafe Left",
+    "moisture_pct": 70,
+    "payload_kg": 5,
+    "total_mass_kg": 27.0,
+    "forward_m": 0.0,
+    "lateral_m": 0.638,
+    "speed_m_min": 2.55,
+    "spin_deg_s": 0.0
+  },
+  {
+    "scenario": "Strafe Right",
+    "moisture_pct": 70,
+    "payload_kg": 5,
+    "total_mass_kg": 27.0,
+    "forward_m": 0.0,
+    "lateral_m": 0.638,
+    "speed_m_min": 2.55,
+    "spin_deg_s": 0.0
+  },
+  {
+    "scenario": "Straight Forward",
+    "moisture_pct": 70,
+    "payload_kg": 10,
+    "total_mass_kg": 32.0,
+    "forward_m": 1.138,
+    "lateral_m": 0.0,
+    "speed_m_min": 4.55,
+    "spin_deg_s": 0.0
+  },
+  {
+    "scenario": "Straight Reverse",
+    "moisture_pct": 70,
+    "payload_kg": 10,
+    "total_mass_kg": 32.0,
+    "forward_m": 1.138,
+    "lateral_m": 0.0,
+    "speed_m_min": 4.55,
+    "spin_deg_s": 0.0
+  },
+  {
+    "scenario": "Wind 40 km/h",
+    "moisture_pct": 70,
+    "payload_kg": 10,
+    "total_mass_kg": 32.0,
+    "forward_m": 1.138,
+    "lateral_m": 0.0,
+    "speed_m_min": 4.55,
+    "spin_deg_s": 0.0
+  },
+  {
+    "scenario": "Arc Left R=1m",
+    "moisture_pct": 70,
+    "payload_kg": 10,
+    "total_mass_kg": 32.0,
+    "forward_m": 0.868,
+    "lateral_m": 0.544,
+    "speed_m_min": 4.1,
+    "spin_deg_s": 4.13
+  },
+  {
+    "scenario": "Arc Right R=1m",
+    "moisture_pct": 70,
+    "payload_kg": 10,
+    "total_mass_kg": 32.0,
+    "forward_m": 0.868,
+    "lateral_m": 0.544,
+    "speed_m_min": 4.1,
+    "spin_deg_s": 4.13
+  },
+  {
+    "scenario": "Spin CW",
+    "moisture_pct": 70,
+    "payload_kg": 10,
+    "total_mass_kg": 32.0,
+    "forward_m": 0.0,
+    "lateral_m": 0.0,
+    "speed_m_min": 0.0,
+    "spin_deg_s": 17.46
+  },
+  {
+    "scenario": "Spin CCW",
+    "moisture_pct": 70,
+    "payload_kg": 10,
+    "total_mass_kg": 32.0,
+    "forward_m": 0.0,
+    "lateral_m": 0.0,
+    "speed_m_min": 0.0,
+    "spin_deg_s": 17.46
+  },
+  {
+    "scenario": "Strafe Left",
+    "moisture_pct": 70,
+    "payload_kg": 10,
+    "total_mass_kg": 32.0,
+    "forward_m": 0.0,
+    "lateral_m": 0.627,
+    "speed_m_min": 2.51,
+    "spin_deg_s": 0.0
+  },
+  {
+    "scenario": "Strafe Right",
+    "moisture_pct": 70,
+    "payload_kg": 10,
+    "total_mass_kg": 32.0,
+    "forward_m": 0.0,
+    "lateral_m": 0.627,
+    "speed_m_min": 2.51,
+    "spin_deg_s": 0.0
+  },
+  {
+    "scenario": "Straight Forward",
+    "moisture_pct": 90,
+    "payload_kg": 0,
+    "total_mass_kg": 22.0,
+    "forward_m": 0.927,
+    "lateral_m": 0.0,
+    "speed_m_min": 3.71,
+    "spin_deg_s": 0.0
+  },
+  {
+    "scenario": "Straight Reverse",
+    "moisture_pct": 90,
+    "payload_kg": 0,
+    "total_mass_kg": 22.0,
+    "forward_m": 0.927,
+    "lateral_m": 0.0,
+    "speed_m_min": 3.71,
+    "spin_deg_s": 0.0
+  },
+  {
+    "scenario": "Wind 40 km/h",
+    "moisture_pct": 90,
+    "payload_kg": 0,
+    "total_mass_kg": 22.0,
+    "forward_m": 0.927,
+    "lateral_m": 0.0,
+    "speed_m_min": 3.71,
+    "spin_deg_s": 0.0
+  },
+  {
+    "scenario": "Arc Left R=1m",
+    "moisture_pct": 90,
+    "payload_kg": 0,
+    "total_mass_kg": 22.0,
+    "forward_m": 0.77,
+    "lateral_m": 0.363,
+    "speed_m_min": 3.41,
+    "spin_deg_s": 3.36
+  },
+  {
+    "scenario": "Arc Right R=1m",
+    "moisture_pct": 90,
+    "payload_kg": 0,
+    "total_mass_kg": 22.0,
+    "forward_m": 0.77,
+    "lateral_m": 0.363,
+    "speed_m_min": 3.41,
+    "spin_deg_s": 3.36
+  },
+  {
+    "scenario": "Spin CW",
+    "moisture_pct": 90,
+    "payload_kg": 0,
+    "total_mass_kg": 22.0,
+    "forward_m": 0.0,
+    "lateral_m": 0.0,
+    "speed_m_min": 0.0,
+    "spin_deg_s": 14.23
+  },
+  {
+    "scenario": "Spin CCW",
+    "moisture_pct": 90,
+    "payload_kg": 0,
+    "total_mass_kg": 22.0,
+    "forward_m": 0.0,
+    "lateral_m": 0.0,
+    "speed_m_min": 0.0,
+    "spin_deg_s": 14.23
+  },
+  {
+    "scenario": "Strafe Left",
+    "moisture_pct": 90,
+    "payload_kg": 0,
+    "total_mass_kg": 22.0,
+    "forward_m": 0.0,
+    "lateral_m": 0.511,
+    "speed_m_min": 2.04,
+    "spin_deg_s": 0.0
+  },
+  {
+    "scenario": "Strafe Right",
+    "moisture_pct": 90,
+    "payload_kg": 0,
+    "total_mass_kg": 22.0,
+    "forward_m": 0.0,
+    "lateral_m": 0.511,
+    "speed_m_min": 2.04,
+    "spin_deg_s": 0.0
+  },
+  {
+    "scenario": "Straight Forward",
+    "moisture_pct": 90,
+    "payload_kg": 5,
+    "total_mass_kg": 27.0,
+    "forward_m": 0.91,
+    "lateral_m": 0.0,
+    "speed_m_min": 3.64,
+    "spin_deg_s": 0.0
+  },
+  {
+    "scenario": "Straight Reverse",
+    "moisture_pct": 90,
+    "payload_kg": 5,
+    "total_mass_kg": 27.0,
+    "forward_m": 0.91,
+    "lateral_m": 0.0,
+    "speed_m_min": 3.64,
+    "spin_deg_s": 0.0
+  },
+  {
+    "scenario": "Wind 40 km/h",
+    "moisture_pct": 90,
+    "payload_kg": 5,
+    "total_mass_kg": 27.0,
+    "forward_m": 0.91,
+    "lateral_m": 0.0,
+    "speed_m_min": 3.64,
+    "spin_deg_s": 0.0
+  },
+  {
+    "scenario": "Arc Left R=1m",
+    "moisture_pct": 90,
+    "payload_kg": 5,
+    "total_mass_kg": 27.0,
+    "forward_m": 0.756,
+    "lateral_m": 0.356,
+    "speed_m_min": 3.35,
+    "spin_deg_s": 3.3
+  },
+  {
+    "scenario": "Arc Right R=1m",
+    "moisture_pct": 90,
+    "payload_kg": 5,
+    "total_mass_kg": 27.0,
+    "forward_m": 0.756,
+    "lateral_m": 0.356,
+    "speed_m_min": 3.35,
+    "spin_deg_s": 3.3
+  },
+  {
+    "scenario": "Spin CW",
+    "moisture_pct": 90,
+    "payload_kg": 5,
+    "total_mass_kg": 27.0,
+    "forward_m": 0.0,
+    "lateral_m": 0.0,
+    "speed_m_min": 0.0,
+    "spin_deg_s": 13.97
+  },
+  {
+    "scenario": "Spin CCW",
+    "moisture_pct": 90,
+    "payload_kg": 5,
+    "total_mass_kg": 27.0,
+    "forward_m": 0.0,
+    "lateral_m": 0.0,
+    "speed_m_min": 0.0,
+    "spin_deg_s": 13.97
+  },
+  {
+    "scenario": "Strafe Left",
+    "moisture_pct": 90,
+    "payload_kg": 5,
+    "total_mass_kg": 27.0,
+    "forward_m": 0.0,
+    "lateral_m": 0.502,
+    "speed_m_min": 2.0,
+    "spin_deg_s": 0.0
+  },
+  {
+    "scenario": "Strafe Right",
+    "moisture_pct": 90,
+    "payload_kg": 5,
+    "total_mass_kg": 27.0,
+    "forward_m": 0.0,
+    "lateral_m": 0.502,
+    "speed_m_min": 2.0,
+    "spin_deg_s": 0.0
+  },
+  {
+    "scenario": "Straight Forward",
+    "moisture_pct": 90,
+    "payload_kg": 10,
+    "total_mass_kg": 32.0,
+    "forward_m": 0.894,
+    "lateral_m": 0.0,
+    "speed_m_min": 3.58,
+    "spin_deg_s": 0.0
+  },
+  {
+    "scenario": "Straight Reverse",
+    "moisture_pct": 90,
+    "payload_kg": 10,
+    "total_mass_kg": 32.0,
+    "forward_m": 0.894,
+    "lateral_m": 0.0,
+    "speed_m_min": 3.58,
+    "spin_deg_s": 0.0
+  },
+  {
+    "scenario": "Wind 40 km/h",
+    "moisture_pct": 90,
+    "payload_kg": 10,
+    "total_mass_kg": 32.0,
+    "forward_m": 0.894,
+    "lateral_m": 0.0,
+    "speed_m_min": 3.58,
+    "spin_deg_s": 0.0
+  },
+  {
+    "scenario": "Arc Left R=1m",
+    "moisture_pct": 90,
+    "payload_kg": 10,
+    "total_mass_kg": 32.0,
+    "forward_m": 0.742,
+    "lateral_m": 0.35,
+    "speed_m_min": 3.29,
+    "spin_deg_s": 3.24
+  },
+  {
+    "scenario": "Arc Right R=1m",
+    "moisture_pct": 90,
+    "payload_kg": 10,
+    "total_mass_kg": 32.0,
+    "forward_m": 0.742,
+    "lateral_m": 0.35,
+    "speed_m_min": 3.29,
+    "spin_deg_s": 3.24
+  },
+  {
+    "scenario": "Spin CW",
+    "moisture_pct": 90,
+    "payload_kg": 10,
+    "total_mass_kg": 32.0,
+    "forward_m": 0.0,
+    "lateral_m": 0.0,
+    "speed_m_min": 0.0,
+    "spin_deg_s": 13.72
+  },
+  {
+    "scenario": "Spin CCW",
+    "moisture_pct": 90,
+    "payload_kg": 10,
+    "total_mass_kg": 32.0,
+    "forward_m": 0.0,
+    "lateral_m": 0.0,
+    "speed_m_min": 0.0,
+    "spin_deg_s": 13.72
+  },
+  {
+    "scenario": "Strafe Left",
+    "moisture_pct": 90,
+    "payload_kg": 10,
+    "total_mass_kg": 32.0,
+    "forward_m": 0.0,
+    "lateral_m": 0.493,
+    "speed_m_min": 1.97,
+    "spin_deg_s": 0.0
+  },
+  {
+    "scenario": "Strafe Right",
+    "moisture_pct": 90,
+    "payload_kg": 10,
+    "total_mass_kg": 32.0,
+    "forward_m": 0.0,
+    "lateral_m": 0.493,
+    "speed_m_min": 1.97,
+    "spin_deg_s": 0.0
+  }
+]

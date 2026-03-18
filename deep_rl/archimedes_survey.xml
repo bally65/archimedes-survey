@@ -1,0 +1,257 @@
+<!--
+  archimedes_survey.xml
+  =====================
+  MuJoCo model for Archimedes Survey robot:
+    - Dual Archimedes screw propulsion (2 × NEMA23 + 10:1 gearbox)
+    - 3-DOF probe arm (J1 yaw ±60°, J2 shoulder 0-120°, J3 elbow 0-135°)
+    - Terrain: variable friction floor (dry sand / wet sand / mud)
+
+  Coordinate frame (MuJoCo Z-up):
+    Z = up (vertical)
+    X = forward
+    Y = left
+
+  Our robot dimensions (from mechanics/assemble_machine_v2.py):
+    Pipe OD = 168 mm → radius = 0.084 m, length = 0.45 m
+    Screw A at Y = 0,    Screw B at Y = +0.300 m
+    Platform height above pipe center: 0.084 + 0.060 = 0.144 m → Z = 0.264 m
+    Platform: 508 × 878 × 12 mm
+    NEMA23: 57 × 57 × 78 mm body + 10:1 gearbox 90 mm
+
+  Actuator mapping:
+    ctrl[0]  = screw_a    (left screw rotation, Nm)
+    ctrl[1]  = screw_b    (right screw rotation, Nm)
+    ctrl[2]  = arm_j1     (yaw,      Nm)
+    ctrl[3]  = arm_j2     (shoulder, Nm)
+    ctrl[4]  = arm_j3     (elbow,    Nm)
+-->
+<mujoco model="archimedes_survey">
+
+  <compiler angle="radian" />
+
+  <option integrator="Euler" timestep="0.002"
+          iterations="100" solver="Newton"
+          tolerance="1e-9"
+          gravity="0 0 -9.81"
+          density="1200"
+          viscosity="0.02" />
+
+  <!-- ================================================================
+       Defaults
+  ================================================================ -->
+  <default>
+    <default class="screw">
+      <joint type="hinge" axis="1 0 0" damping="2.0" armature="0.05" />
+      <!-- High friction to simulate screw-soil interaction -->
+      <geom condim="6" contype="1" conaffinity="1"
+            friction="3.0 0.8 0.8"
+            solref="0.02 1.5" solimp="0.95 0.99 0.001" />
+    </default>
+    <default class="arm_joint">
+      <joint damping="0.3" armature="0.01" />
+      <geom condim="3" contype="2" conaffinity="2"
+            friction="0.5 0.1 0.1" />
+    </default>
+    <default class="chassis">
+      <geom condim="3" contype="1" conaffinity="1"
+            friction="0.4 0.1 0.1" />
+    </default>
+  </default>
+
+  <!-- ================================================================
+       Assets / Materials
+  ================================================================ -->
+  <asset>
+    <texture name="terrain_tex" type="2d" builtin="checker"
+             rgb1=".55 .45 .3" rgb2=".7 .6 .45"
+             width="128" height="128" />
+    <material name="terrain_mat" texture="terrain_tex"
+              texrepeat="6 6" texuniform="true" reflectance="0.1" />
+    <material name="chassis_mat" rgba="0.15 0.15 0.15 1" />
+    <material name="screw_mat"   rgba="0.7  0.7  0.7  1" />
+    <material name="arm_mat"     rgba="0.2  0.5  0.9  1" />
+    <material name="probe_mat"   rgba="0.9  0.7  0.1  1" />
+    <material name="target_mat"  rgba="0.1  0.9  0.1  0.6" />
+  </asset>
+
+  <!-- ================================================================
+       World
+  ================================================================ -->
+  <worldbody>
+    <light directional="true" ambient=".35 .35 .35"
+           pos="20 20 40" dir="-0.3 -0.5 -1" />
+
+    <!-- Terrain floor — friction changed via code to simulate mud/sand -->
+    <geom name="floor" type="plane" size="50 50 0.1"
+          material="terrain_mat"
+          condim="6" contype="1" conaffinity="1"
+          friction="1.5 0.5 0.5"
+          solref="0.02 1.5" solimp="0.9 0.95 0.001" />
+
+    <!-- Burrow target marker (position set via code) -->
+    <body name="target_body" pos="10 0 0">
+      <geom name="target_geom" type="cylinder" size="0.05 0.01"
+            material="target_mat"
+            contype="0" conaffinity="0" />
+    </body>
+
+    <!-- ============================================================
+         MOBILE BASE
+         Starts at Z = 0.12 m (screw axis center above ground)
+         Screw B offset: Y = +0.15 m from base center (= Y_base + 0.15)
+         We center the robot between the two screws:
+           robot center Y = 0.150 m offset from screw A
+    ============================================================ -->
+    <body name="mobile_base" pos="0 0 0.12">
+      <freejoint name="base_free" />
+
+      <!-- Chassis / platform plate -->
+      <geom name="chassis_plate" type="box"
+            size="0.439 0.254 0.006"
+            pos="0 0.150 0.150"
+            material="chassis_mat" class="chassis"
+            mass="2.0" />
+
+      <!-- Motor bracket H-frames (front + rear, simplified) -->
+      <geom name="bracket_front" type="box" size="0.050 0.195 0.080"
+            pos="-0.280 0.150 0.060"
+            material="chassis_mat" class="chassis" mass="0.5" />
+      <geom name="bracket_rear" type="box" size="0.050 0.195 0.080"
+            pos=" 0.280 0.150 0.060"
+            material="chassis_mat" class="chassis" mass="0.5" />
+
+      <!-- ---- SCREW A (Y = 0) ---- -->
+      <body name="screw_a" pos="0 0 0">
+        <!-- PVC pipe tube (static, part of chassis) -->
+        <geom name="pipe_a" type="cylinder" size="0.084 0.225"
+              quat="0.707 0 0.707 0"
+              material="chassis_mat" class="chassis" mass="1.5" />
+        <!-- Rotating helix (approximated as 4 angled vane cylinders) -->
+        <joint name="joint_screw_a" class="screw" />
+        <geom name="helix_a0" type="capsule" size="0.008 0.090"
+              pos="0.050 0.060 0" quat="0.924 0.383 0 0"
+              material="screw_mat" class="screw" mass="0.1" />
+        <geom name="helix_a1" type="capsule" size="0.008 0.090"
+              pos="-0.050 0.000 0.060" quat="0.924 0 0.383 0"
+              material="screw_mat" class="screw" mass="0.1" />
+        <geom name="helix_a2" type="capsule" size="0.008 0.090"
+              pos="-0.050 -0.060 0" quat="0.924 -0.383 0 0"
+              material="screw_mat" class="screw" mass="0.1" />
+        <geom name="helix_a3" type="capsule" size="0.008 0.090"
+              pos="0.050 0.000 -0.060" quat="0.924 0 -0.383 0"
+              material="screw_mat" class="screw" mass="0.1" />
+      </body>
+
+      <!-- ---- SCREW B (Y = +0.300 m) ---- -->
+      <body name="screw_b" pos="0 0.300 0">
+        <geom name="pipe_b" type="cylinder" size="0.084 0.225"
+              quat="0.707 0 0.707 0"
+              material="chassis_mat" class="chassis" mass="1.5" />
+        <!-- Mirrored helix (opposite handedness → counter-rotation) -->
+        <joint name="joint_screw_b" class="screw" />
+        <geom name="helix_b0" type="capsule" size="0.008 0.090"
+              pos="0.050 0.060 0" quat="0.924 -0.383 0 0"
+              material="screw_mat" class="screw" mass="0.1" />
+        <geom name="helix_b1" type="capsule" size="0.008 0.090"
+              pos="-0.050 0.000 0.060" quat="0.924 0 -0.383 0"
+              material="screw_mat" class="screw" mass="0.1" />
+        <geom name="helix_b2" type="capsule" size="0.008 0.090"
+              pos="-0.050 -0.060 0" quat="0.924 0.383 0 0"
+              material="screw_mat" class="screw" mass="0.1" />
+        <geom name="helix_b3" type="capsule" size="0.008 0.090"
+              pos="0.050 0.000 -0.060" quat="0.924 0 0.383 0"
+              material="screw_mat" class="screw" mass="0.1" />
+      </body>
+
+      <!-- ============================================================
+           3-DOF ARM
+           Mounted on platform center: Y=0.150, Z=0.156 (top of platform)
+      ============================================================ -->
+      <body name="arm_base_mount" pos="0 0.150 0.162">
+        <geom name="arm_base_geom" type="box" size="0.040 0.040 0.044"
+              material="arm_mat" class="arm_joint" mass="0.3" />
+
+        <!-- J1: Yaw (about Z-axis) ±60° -->
+        <body name="arm_turret" pos="0 0 0.044">
+          <joint name="arm_j1" type="hinge" axis="0 0 1"
+                 range="-1.047 1.047" class="arm_joint"
+                 damping="0.5" armature="0.02" />
+          <geom name="turret_geom" type="cylinder" size="0.030 0.025"
+                material="arm_mat" class="arm_joint" mass="0.15" />
+
+          <!-- J2: Shoulder (about Y-axis) 0-120° -->
+          <body name="arm_upper" pos="0 0 0.025">
+            <joint name="arm_j2" type="hinge" axis="0 1 0"
+                   range="0 2.094" class="arm_joint"
+                   damping="0.8" armature="0.03" />
+            <geom name="upper_arm_geom" type="capsule" size="0.018 0.073"
+                  pos="0 0 0.073"
+                  material="arm_mat" class="arm_joint" mass="0.2" />
+
+            <!-- J3: Elbow (about Y-axis) 0-135° -->
+            <body name="arm_forearm" pos="0 0 0.146">
+              <joint name="arm_j3" type="hinge" axis="0 1 0"
+                     range="0 2.356" class="arm_joint"
+                     damping="0.5" armature="0.02" />
+              <geom name="forearm_geom" type="capsule" size="0.015 0.110"
+                    pos="0 0 0.110"
+                    material="arm_mat" class="arm_joint" mass="0.15" />
+
+              <!-- Probe tip -->
+              <body name="probe_tip" pos="0 0 0.220">
+                <geom name="probe_geom" type="capsule" size="0.006 0.100"
+                      pos="0 0 0.100"
+                      material="probe_mat" class="arm_joint" mass="0.05" />
+                <site name="ee_site" pos="0 0 0.200" size="0.01" />
+              </body>
+            </body>
+          </body>
+        </body>
+      </body>
+
+    </body><!-- /mobile_base -->
+
+  </worldbody>
+
+  <!-- ================================================================
+       Sensors
+  ================================================================ -->
+  <sensor>
+    <framepos  name="base_pos"   objtype="body" objname="mobile_base" />
+    <framequat name="base_quat"  objtype="body" objname="mobile_base" />
+    <framelinvel  name="base_vel"  objtype="body" objname="mobile_base" />
+    <frameangvel  name="base_angvel" objtype="body" objname="mobile_base" />
+    <framepos  name="ee_pos"    objtype="site" objname="ee_site" />
+    <framelinvel  name="ee_vel"  objtype="site" objname="ee_site" />
+    <jointpos  name="j1_pos"  joint="arm_j1" />
+    <jointpos  name="j2_pos"  joint="arm_j2" />
+    <jointpos  name="j3_pos"  joint="arm_j3" />
+    <jointvel  name="j1_vel"  joint="arm_j1" />
+    <jointvel  name="j2_vel"  joint="arm_j2" />
+    <jointvel  name="j3_vel"  joint="arm_j3" />
+    <jointvel  name="sa_vel"  joint="joint_screw_a" />
+    <jointvel  name="sb_vel"  joint="joint_screw_b" />
+  </sensor>
+
+  <!-- ================================================================
+       Actuators
+       ctrl[0] = screw_a  (torque, Nm)
+       ctrl[1] = screw_b  (torque, Nm)
+       ctrl[2] = arm_j1   (torque, Nm)  MG996R  1.27 Nm
+       ctrl[3] = arm_j2   (torque, Nm)  DS3225MG 1.96 Nm
+       ctrl[4] = arm_j3   (torque, Nm)  MG996R  1.27 Nm
+  ================================================================ -->
+  <actuator>
+    <motor name="screw_a"  joint="joint_screw_a" gear="10"
+           forcerange="-30 30" />
+    <motor name="screw_b"  joint="joint_screw_b" gear="10"
+           forcerange="-30 30" />
+    <motor name="arm_j1"   joint="arm_j1"  gear="1"
+           forcerange="-1.27 1.27" />
+    <motor name="arm_j2"   joint="arm_j2"  gear="1"
+           forcerange="-1.96 1.96" />
+    <motor name="arm_j3"   joint="arm_j3"  gear="1"
+           forcerange="-1.27 1.27" />
+  </actuator>
+
+</mujoco>

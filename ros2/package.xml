@@ -1,0 +1,53 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>archimedes_survey</name>
+  <version>0.1.0</version>
+  <description>
+    Archimedes dual-screw survey robot for Lysiosquillina habitat mapping.
+    Includes arm control, burrow detection, autonomous navigation, and remote dashboard.
+  </description>
+  <maintainer email="bally65@example.com">bally65</maintainer>
+  <license>MIT</license>
+
+  <!-- Build -->
+  <buildtool_depend>ament_python</buildtool_depend>
+
+  <!-- Runtime: ROS2 core -->
+  <depend>rclpy</depend>
+  <depend>std_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>sensor_msgs</depend>
+  <depend>nav_msgs</depend>
+  <depend>tf2_ros</depend>
+  <depend>tf2_geometry_msgs</depend>
+
+  <!-- Robot description -->
+  <depend>robot_state_publisher</depend>
+  <depend>joint_state_publisher</depend>
+  <depend>joint_state_publisher_gui</depend>
+
+  <!-- Control -->
+  <depend>ros2_control</depend>
+  <depend>ros2_controllers</depend>
+  <depend>controller_manager</depend>
+
+  <!-- Vision -->
+  <depend>cv_bridge</depend>
+  <depend>image_transport</depend>
+
+  <!-- Launch -->
+  <exec_depend>launch</exec_depend>
+  <exec_depend>launch_ros</exec_depend>
+  <exec_depend>xacro</exec_depend>
+
+  <!-- Test -->
+  <test_depend>ament_copyright</test_depend>
+  <test_depend>ament_flake8</test_depend>
+  <test_depend>ament_pep257</test_depend>
+  <test_depend>python3-pytest</test_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>

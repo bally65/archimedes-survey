@@ -1,0 +1,24 @@
+# control/requirements.txt
+# ========================
+# Archimedes Survey -- remote control system
+# Python 3.10+ | Raspberry Pi 4 / Ubuntu 22.04
+
+# Web dashboard
+fastapi>=0.110.0
+uvicorn[standard]>=0.29.0
+jinja2>=3.1.0
+python-multipart>=0.0.9
+
+# Camera stream
+opencv-python-headless>=4.9.0   # headless for RPi (no GUI needed)
+
+# LoRa bridge (optional, only if using SX127x hardware)
+# pip install pyLoRa spidev RPi.GPIO
+
+# ROS2 Python packages -- install via apt, NOT pip:
+#   sudo apt install python3-rclpy
+#   sudo apt install ros-<distro>-sensor-msgs
+#   sudo apt install ros-<distro>-geometry-msgs
+
+# Networking (usually pre-installed)
+# aiohttp>=3.9.0  (optional, for GPS tile proxying)

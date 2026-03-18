@@ -1,0 +1,32 @@
+# /etc/systemd/system/archimedes.service
+#
+# 安裝方式：
+#   sudo cp deploy/archimedes.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable archimedes
+#   sudo systemctl start archimedes
+#
+# 查看 log：
+#   journalctl -u archimedes -f
+#
+# 注意：本服務啟動 Web dashboard（FastAPI）
+# ROS2 節點由另一個 archimedes-ros.service 管理
+
+[Unit]
+Description=Archimedes Survey Web Dashboard
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/archimedes-survey
+Environment="PATH=/home/pi/archimedes-survey/venv/bin:/usr/bin:/bin"
+ExecStart=/home/pi/archimedes-survey/venv/bin/python control/web_dashboard.py
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

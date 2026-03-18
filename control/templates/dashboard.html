@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Archimedes Survey Control</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #0d1117; color: #e6edf3; font-family: 'Segoe UI', monospace; }
+
+header {
+  background: #161b22; padding: 12px 20px;
+  display: flex; align-items: center; gap: 16px;
+  border-bottom: 1px solid #30363d;
+}
+header h1 { font-size: 1.1rem; color: #58a6ff; }
+#conn-dot { width: 10px; height: 10px; border-radius: 50%; background: #f85149; }
+#conn-dot.ok { background: #3fb950; }
+#lora-badge {
+  margin-left: auto; font-size: 0.75rem; padding: 3px 8px;
+  border-radius: 10px; background: #21262d; color: #8b949e;
+}
+#lora-badge.ok { background: #0d419d; color: #79c0ff; }
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto auto auto;
+  gap: 12px; padding: 12px;
+  max-width: 1200px; margin: auto;
+}
+
+/* Camera takes top-left */
+#camera-card { grid-column: 1; grid-row: 1; }
+/* GPS map top-right */
+#map-card    { grid-column: 2; grid-row: 1; }
+/* Telemetry spans both columns row 2 */
+#telem-card  { grid-column: 1 / 3; grid-row: 2; }
+/* Controls row 3 */
+#ctrl-card   { grid-column: 1; grid-row: 3; }
+/* Arm row 3 */
+#arm-card    { grid-column: 2; grid-row: 3; }
+
+.card {
+  background: #161b22; border: 1px solid #30363d;
+  border-radius: 8px; padding: 14px;
+}
+.card h2 { font-size: 0.85rem; color: #8b949e; margin-bottom: 10px;
+  text-transform: uppercase; letter-spacing: 1px; }
+
+/* Camera */
+#camera-feed { width: 100%; border-radius: 6px; background: #000;
+  display: block; max-height: 320px; object-fit: cover; }
+
+/* GPS canvas */
+#gps-canvas { width: 100%; height: 240px; background: #0d1117;
+  border-radius: 6px; border: 1px solid #30363d; }
+
+/* Telemetry */
+.telem-row { display: flex; gap: 16px; flex-wrap: wrap; }
+.telem-box {
+  flex: 1; min-width: 100px; background: #0d1117; border-radius: 6px;
+  padding: 10px; text-align: center; border: 1px solid #30363d;
+}
+.telem-box .label { font-size: 0.7rem; color: #8b949e; }
+.telem-box .value { font-size: 1.4rem; font-weight: bold; color: #e6edf3; margin-top: 4px; }
+.telem-box.alert .value { color: #f85149; }
+.telem-box.warn  .value { color: #d29922; }
+.telem-box.ok    .value { color: #3fb950; }
+
+/* Controls */
+.dpad {
+  display: grid; grid-template-columns: repeat(3, 56px);
+  grid-template-rows: repeat(3, 56px); gap: 6px;
+  margin: 10px auto; width: fit-content;
+}
+.dpad button {
+  background: #21262d; border: 1px solid #30363d; color: #e6edf3;
+  border-radius: 8px; font-size: 1.4rem; cursor: pointer;
+  transition: background 0.1s;
+}
+.dpad button:active, .dpad button.pressed { background: #388bfd; }
+.dpad button:disabled { opacity: 0.2; cursor: default; }
+.dpad .empty { visibility: hidden; }
+#stop-btn {
+  display: block; margin: 0 auto 10px;
+  padding: 10px 28px; background: #da3633; border: none;
+  border-radius: 8px; color: #fff; font-size: 1rem; cursor: pointer;
+}
+.speed-row { display: flex; align-items: center; gap: 10px; font-size: 0.85rem; }
+.speed-row input { flex: 1; }
+
+/* Auto mode */
+.auto-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.auto-row input[type=text] {
+  flex: 1; background: #0d1117; border: 1px solid #30363d;
+  color: #e6edf3; padding: 6px 8px; border-radius: 6px; font-size: 0.85rem;
+}
+.btn {
+  padding: 7px 14px; border: none; border-radius: 6px;
+  cursor: pointer; font-size: 0.85rem; color: #fff;
+}
+.btn-blue  { background: #1f6feb; }
+.btn-green { background: #238636; }
+.btn-red   { background: #da3633; }
+.btn-orange{ background: #9e6a03; }
+#auto-status { margin-top: 8px; font-size: 0.8rem; color: #8b949e; }
+
+/* Arm */
+.arm-sliders label { font-size: 0.8rem; color: #8b949e; display: block; margin-top: 8px; }
+.arm-sliders input { width: 100%; }
+.arm-sliders .deg-val { font-size: 0.85rem; color: #79c0ff; }
+.arm-poses { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+.arm-poses button {
+  padding: 6px 12px; border: 1px solid #30363d; border-radius: 6px;
+  background: #21262d; color: #e6edf3; cursor: pointer; font-size: 0.8rem;
+}
+.arm-poses button:hover { background: #388bfd; border-color: #388bfd; }
+
+/* Log */
+#log { margin-top: 12px; max-width: 1200px; margin-left: auto; margin-right: auto;
+  padding: 0 12px 12px; }
+#log-box {
+  background: #0d1117; border: 1px solid #30363d; border-radius: 6px;
+  padding: 8px; height: 100px; overflow-y: auto; font-size: 0.75rem;
+  color: #8b949e; font-family: monospace;
+}
+
+@media (max-width: 700px) {
+  .grid { grid-template-columns: 1fr; }
+  #camera-card, #map-card, #telem-card, #ctrl-card, #arm-card {
+    grid-column: 1; grid-row: auto;
+  }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div id="conn-dot"></div>
+  <h1>Archimedes Survey Control</h1>
+  <span id="lora-badge">LoRa ---</span>
+</header>
+
+<div class="grid">
+
+  <!-- Camera -->
+  <div class="card" id="camera-card">
+    <h2>Live Camera</h2>
+    <img id="camera-feed" src="/video" alt="Camera feed" onerror="this.alt='Camera unavailable'">
+  </div>
+
+  <!-- GPS Map -->
+  <div class="card" id="map-card">
+    <h2>GPS Track</h2>
+    <canvas id="gps-canvas"></canvas>
+    <div style="font-size:0.75rem;color:#8b949e;margin-top:4px;" id="gps-text">
+      No fix
+    </div>
+  </div>
+
+  <!-- Telemetry -->
+  <div class="card" id="telem-card">
+    <h2>Telemetry</h2>
+    <div class="telem-row">
+      <div class="telem-box" id="box-batt">
+        <div class="label">Battery</div>
+        <div class="value" id="v-batt">--</div>
+      </div>
+      <div class="telem-box" id="box-tidal">
+        <div class="label">Tidal Water</div>
+        <div class="value" id="v-tidal">--</div>
+      </div>
+      <div class="telem-box">
+        <div class="label">Roll</div>
+        <div class="value" id="v-roll">--</div>
+      </div>
+      <div class="telem-box">
+        <div class="label">Pitch</div>
+        <div class="value" id="v-pitch">--</div>
+      </div>
+      <div class="telem-box">
+        <div class="label">Yaw</div>
+        <div class="value" id="v-yaw">--</div>
+      </div>
+      <div class="telem-box">
+        <div class="label">L Motor</div>
+        <div class="value" id="v-lrpm">--</div>
+      </div>
+      <div class="telem-box">
+        <div class="label">R Motor</div>
+        <div class="value" id="v-rrpm">--</div>
+      </div>
+      <div class="telem-box">
+        <div class="label">Mode</div>
+        <div class="value" id="v-mode" style="font-size:1rem">--</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Manual control -->
+  <div class="card" id="ctrl-card">
+    <h2>Manual Control</h2>
+    <button id="stop-btn">STOP</button>
+    <div class="dpad">
+      <div class="empty"></div>
+      <button id="btn-fwd"  title="Forward">&#8593;</button>
+      <div class="empty"></div>
+      <button id="btn-left" title="Left">&#8592;</button>
+      <button id="btn-spin-ccw" title="Spin CCW">&#8634;</button>
+      <button id="btn-right" title="Right">&#8594;</button>
+      <div class="empty"></div>
+      <button id="btn-back" title="Back">&#8595;</button>
+      <button id="btn-spin-cw" title="Spin CW">&#8635;</button>
+    </div>
+    <div class="speed-row">
+      <span>Speed</span>
+      <input type="range" id="speed-range" min="0.1" max="1.0" step="0.05" value="0.5">
+      <span id="speed-val">0.50</span>
+    </div>
+
+    <div style="margin-top:14px;">
+      <h2>Autonomous</h2>
+      <div class="auto-row">
+        <input type="text" id="tgt-lat" placeholder="Target Lat">
+        <input type="text" id="tgt-lon" placeholder="Target Lon">
+        <button class="btn btn-blue"   onclick="cmdGoto()">GOTO</button>
+        <button class="btn btn-green"  onclick="cmdSurvey()">SURVEY</button>
+        <button class="btn btn-orange" onclick="cmdRTH()">RTH</button>
+        <button class="btn btn-red"    onclick="cmdAutoStop()">STOP AUTO</button>
+      </div>
+      <div id="auto-status">Auto: idle</div>
+    </div>
+  </div>
+
+  <!-- Arm control -->
+  <div class="card" id="arm-card">
+    <h2>Arm Control</h2>
+    <div class="arm-poses">
+      <button onclick="sendArm({pose:'stow'})">Stow</button>
+      <button onclick="sendArm({pose:'deploy'})">Deploy</button>
+      <button onclick="sendArm({pose:'scan'})">Scan</button>
+    </div>
+    <div class="arm-sliders">
+      <label>J1 Yaw &nbsp;<span class="deg-val" id="j1-val">0&deg;</span></label>
+      <input type="range" id="j1-slider" min="-60" max="60" value="0"
+             oninput="sliderChange('j1',this.value)">
+
+      <label>J2 Shoulder &nbsp;<span class="deg-val" id="j2-val">0&deg;</span></label>
+      <input type="range" id="j2-slider" min="0" max="120" value="0"
+             oninput="sliderChange('j2',this.value)">
+
+      <label>J3 Elbow &nbsp;<span class="deg-val" id="j3-val">0&deg;</span></label>
+      <input type="range" id="j3-slider" min="0" max="135" value="0"
+             oninput="sliderChange('j3',this.value)">
+    </div>
+    <div style="margin-top:10px; font-size:0.8rem; color:#8b949e;">
+      Arm pose: <span id="arm-pose-label">stow</span>
+    </div>
+  </div>
+
+</div>
+
+<!-- Event log -->
+<div id="log">
+  <div class="card">
+    <h2>Event Log</h2>
+    <div id="log-box"></div>
+  </div>
+</div>
+
+<script>
+// ---------------------------------------------------------------------------
+// WebSocket
+// ---------------------------------------------------------------------------
+let ws = null;
+let speedVal = 0.5;
+let gpsTrack = [];   // [{lat, lon}]
+const GPS_MAX_TRACK = 200;
+
+function wsConnect() {
+  ws = new WebSocket(`ws://${location.host}/ws`);
+  ws.onopen  = () => {
+    document.getElementById('conn-dot').className = 'ok';
+    log('WebSocket connected');
+  };
+  ws.onclose = () => {
+    document.getElementById('conn-dot').className = '';
+    log('WebSocket disconnected -- retrying in 3s');
+    setTimeout(wsConnect, 3000);
+  };
+  ws.onmessage = (ev) => {
+    try { handleState(JSON.parse(ev.data)); } catch(e) {}
+  };
+}
+
+function send(obj) {
+  if (ws && ws.readyState === 1) ws.send(JSON.stringify(obj));
+}
+
+// ---------------------------------------------------------------------------
+// State update
+// ---------------------------------------------------------------------------
+function handleState(msg) {
+  if (msg.type !== 'state') return;
+  const d = msg.data;
+
+  // Battery
+  const batt = d.battery?.pct ?? '--';
+  setText('v-batt', batt !== '--' ? batt.toFixed(0)+'%' : '--');
+  setClass('box-batt', batt < 20 ? 'alert' : batt < 40 ? 'warn' : 'ok');
+
+  // Tidal
+  const tidal = d.tidal?.water_cm ?? '--';
+  setText('v-tidal', tidal !== '--' ? tidal.toFixed(1)+' cm' : '--');
+  setClass('box-tidal', d.tidal?.alert ? 'alert' : 'ok');
+
+  // IMU
+  setText('v-roll',  d.imu?.roll?.toFixed(1)+'°' ?? '--');
+  setText('v-pitch', d.imu?.pitch?.toFixed(1)+'°' ?? '--');
+  setText('v-yaw',   d.imu?.yaw?.toFixed(1)+'°' ?? '--');
+
+  // Motors
+  setText('v-lrpm', d.motors?.left_rpm?.toFixed(0)+' rpm' ?? '--');
+  setText('v-rrpm', d.motors?.right_rpm?.toFixed(0)+' rpm' ?? '--');
+
+  // Auto mode
+  const mode = d.auto?.status ?? d.auto?.enabled ? 'auto' : 'manual';
+  setText('v-mode', mode.toUpperCase());
+  setText('auto-status', `Auto: ${mode} | wp ${d.auto?.wp_idx ?? 0}/${d.auto?.wp_total ?? 0}`);
+
+  // LoRa
+  const lora = document.getElementById('lora-badge');
+  if (d.lora?.connected) {
+    lora.textContent = `LoRa ${d.lora.rssi} dBm`;
+    lora.className = 'ok';
+  } else {
+    lora.textContent = 'LoRa OFF';
+    lora.className = '';
+  }
+
+  // Arm sliders sync (from robot state)
+  if (d.arm) {
+    syncSlider('j1', d.arm.j1_deg ?? 0);
+    syncSlider('j2', d.arm.j2_deg ?? 0);
+    syncSlider('j3', d.arm.j3_deg ?? 0);
+    setText('arm-pose-label', d.arm.pose ?? '--');
+  }
+
+  // GPS
+  if (d.gps?.fix) {
+    const lat = d.gps.lat, lon = d.gps.lon;
+    setText('gps-text', `${lat.toFixed(6)}, ${lon.toFixed(6)}`);
+    gpsTrack.push({lat, lon});
+    if (gpsTrack.length > GPS_MAX_TRACK) gpsTrack.shift();
+    drawGPS();
+  }
+}
+
+function setText(id, text) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = text;
+}
+function setClass(id, cls) {
+  const el = document.getElementById(id);
+  if (el) el.className = 'telem-box ' + cls;
+}
+
+// ---------------------------------------------------------------------------
+// GPS canvas
+// ---------------------------------------------------------------------------
+function drawGPS() {
+  const canvas = document.getElementById('gps-canvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width  = canvas.offsetWidth;
+  canvas.height = canvas.offsetHeight;
+  const W = canvas.width, H = canvas.height;
+
+  if (gpsTrack.length < 2) return;
+
+  const lats = gpsTrack.map(p => p.lat);
+  const lons = gpsTrack.map(p => p.lon);
+  const minLat = Math.min(...lats), maxLat = Math.max(...lats);
+  const minLon = Math.min(...lons), maxLon = Math.max(...lons);
+  const pad = 20;
+  const scaleX = (maxLon - minLon) < 1e-7 ? 1 : (W - 2*pad) / (maxLon - minLon);
+  const scaleY = (maxLat - minLat) < 1e-7 ? 1 : (H - 2*pad) / (maxLat - minLat);
+
+  const toX = lon => pad + (lon - minLon) * scaleX;
+  const toY = lat => H - pad - (lat - minLat) * scaleY;
+
+  ctx.clearRect(0, 0, W, H);
+
+  // Track
+  ctx.strokeStyle = '#388bfd';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  gpsTrack.forEach((p, i) => {
+    i === 0 ? ctx.moveTo(toX(p.lon), toY(p.lat))
+            : ctx.lineTo(toX(p.lon), toY(p.lat));
+  });
+  ctx.stroke();
+
+  // Start dot (green)
+  const s = gpsTrack[0];
+  ctx.fillStyle = '#3fb950';
+  ctx.beginPath();
+  ctx.arc(toX(s.lon), toY(s.lat), 5, 0, Math.PI*2);
+  ctx.fill();
+
+  // Current position (blue)
+  const c = gpsTrack[gpsTrack.length - 1];
+  ctx.fillStyle = '#58a6ff';
+  ctx.beginPath();
+  ctx.arc(toX(c.lon), toY(c.lat), 6, 0, Math.PI*2);
+  ctx.fill();
+}
+
+// ---------------------------------------------------------------------------
+// Manual control buttons
+// ---------------------------------------------------------------------------
+const MOVE_MAP = {
+  'btn-fwd':      {linear: 1,  angular: 0},
+  'btn-back':     {linear: -1, angular: 0},
+  'btn-left':     {linear: 0,  angular: 1},
+  'btn-right':    {linear: 0,  angular: -1},
+  'btn-spin-ccw': {linear: 0,  angular: 1.5},
+  'btn-spin-cw':  {linear: 0,  angular: -1.5},
+};
+
+let _moveInterval = null;
+let _activeBtn = null;
+
+function startMove(id) {
+  stopMove();
+  _activeBtn = id;
+  document.getElementById(id)?.classList.add('pressed');
+  const m = MOVE_MAP[id];
+  if (!m) return;
+  const sendMove = () => send({
+    type: 'move',
+    linear:  m.linear  * speedVal,
+    angular: m.angular * speedVal * 0.8,
+  });
+  sendMove();
+  _moveInterval = setInterval(sendMove, 150);
+}
+
+function stopMove() {
+  if (_moveInterval) { clearInterval(_moveInterval); _moveInterval = null; }
+  if (_activeBtn) {
+    document.getElementById(_activeBtn)?.classList.remove('pressed');
+    _activeBtn = null;
+  }
+  send({type: 'move', linear: 0, angular: 0});
+}
+
+Object.keys(MOVE_MAP).forEach(id => {
+  const btn = document.getElementById(id);
+  if (!btn) return;
+  btn.addEventListener('mousedown',  () => startMove(id));
+  btn.addEventListener('touchstart', (e) => { e.preventDefault(); startMove(id); });
+  btn.addEventListener('mouseup',   stopMove);
+  btn.addEventListener('touchend',  stopMove);
+  btn.addEventListener('mouseleave',stopMove);
+});
+
+document.getElementById('stop-btn').onclick = () => {
+  stopMove();
+  send({type: 'stop'});
+  log('EMERGENCY STOP');
+};
+
+// Speed slider
+document.getElementById('speed-range').addEventListener('input', function() {
+  speedVal = parseFloat(this.value);
+  document.getElementById('speed-val').textContent = speedVal.toFixed(2);
+});
+
+// Keyboard control
+const keyMap = {
+  'ArrowUp':    'btn-fwd',  'w': 'btn-fwd',
+  'ArrowDown':  'btn-back', 's': 'btn-back',
+  'ArrowLeft':  'btn-left', 'a': 'btn-left',
+  'ArrowRight': 'btn-right','d': 'btn-right',
+};
+const keysDown = new Set();
+window.addEventListener('keydown', (e) => {
+  const id = keyMap[e.key];
+  if (id && !keysDown.has(e.key)) {
+    keysDown.add(e.key);
+    startMove(id);
+    e.preventDefault();
+  }
+});
+window.addEventListener('keyup', (e) => {
+  if (keyMap[e.key]) {
+    keysDown.delete(e.key);
+    if (keysDown.size === 0) stopMove();
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Autonomous commands
+// ---------------------------------------------------------------------------
+function cmdGoto() {
+  const lat = parseFloat(document.getElementById('tgt-lat').value);
+  const lon = parseFloat(document.getElementById('tgt-lon').value);
+  if (isNaN(lat) || isNaN(lon)) { alert('Enter valid lat/lon'); return; }
+  send({type:'auto', enabled:true, target_lat:lat, target_lon:lon});
+  log(`GOTO ${lat.toFixed(6)}, ${lon.toFixed(6)}`);
+}
+function cmdSurvey() {
+  const lat = parseFloat(document.getElementById('tgt-lat').value);
+  const lon = parseFloat(document.getElementById('tgt-lon').value);
+  if (isNaN(lat) || isNaN(lon)) { alert('Enter center lat/lon'); return; }
+  send({type:'auto', enabled:true, mode:'survey', center_lat:lat, center_lon:lon});
+  log(`SURVEY around ${lat.toFixed(6)}, ${lon.toFixed(6)}`);
+}
+function cmdRTH() {
+  send({type:'auto', enabled:true, mode:'rth'});
+  log('RTH initiated');
+}
+function cmdAutoStop() {
+  send({type:'auto', enabled:false});
+  log('Auto mode disabled');
+}
+
+// ---------------------------------------------------------------------------
+// Arm control
+// ---------------------------------------------------------------------------
+let armTimeout = null;
+function sliderChange(joint, val) {
+  document.getElementById(`${joint}-val`).textContent = `${val}°`;
+  clearTimeout(armTimeout);
+  armTimeout = setTimeout(() => {
+    send({type:'arm', [`${joint}`]: parseFloat(val)});
+  }, 80);
+}
+function syncSlider(joint, val) {
+  const slider = document.getElementById(`${joint}-slider`);
+  const label  = document.getElementById(`${joint}-val`);
+  if (slider) slider.value = val;
+  if (label)  label.textContent = `${val.toFixed(1)}°`;
+}
+function sendArm(cmd) {
+  send({type:'arm', ...cmd});
+  log(`Arm: ${JSON.stringify(cmd)}`);
+}
+
+// ---------------------------------------------------------------------------
+// Log
+// ---------------------------------------------------------------------------
+function log(msg) {
+  const box = document.getElementById('log-box');
+  const t   = new Date().toTimeString().slice(0,8);
+  box.innerHTML += `<div>[${t}] ${msg}</div>`;
+  box.scrollTop = box.scrollHeight;
+}
+
+// ---------------------------------------------------------------------------
+// Init
+// ---------------------------------------------------------------------------
+wsConnect();
+
+// Reload camera on error (camera may take time to start)
+document.getElementById('camera-feed').addEventListener('error', function() {
+  setTimeout(() => { this.src = '/video?' + Date.now(); }, 5000);
+});
+</script>
+</body>
+</html>

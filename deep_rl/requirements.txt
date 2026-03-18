@@ -1,0 +1,36 @@
+# deep_rl/requirements.txt
+# ========================
+# Archimedes Survey -- Deep RL training
+# Python 3.10+ | Ubuntu 22.04 / Windows / macOS
+# GPU recommended (CUDA 11.8+) but CPU works for small runs
+
+# Physics simulation
+mujoco>=3.1.0
+
+# RL framework (same as bally65)
+stable-baselines3[extra]>=2.3.0   # includes tensorboard, rich, gym
+
+# Gymnasium (OpenAI Gym successor)
+gymnasium>=0.29.0
+
+# Numerics
+numpy>=1.24.0
+
+# Visualisation & monitoring
+tensorboard>=2.16.0
+matplotlib>=3.8.0
+
+# Optional: GPU accelerated training
+# torch>=2.2.0+cu118  # already pulled by stable-baselines3
+# torchvision>=0.17.0
+
+# Optional: Hyperparameter tuning
+# optuna>=3.6.0
+# optuna-integration[stable-baselines3]
+
+# Install command:
+#   pip install -r deep_rl/requirements.txt
+#
+# For CUDA GPU:
+#   pip install torch --index-url https://download.pytorch.org/whl/cu118
+#   pip install -r deep_rl/requirements.txt

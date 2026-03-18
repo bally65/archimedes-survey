@@ -1,0 +1,27 @@
+# /etc/systemd/system/archimedes-ros.service
+#
+# 啟動所有 ROS2 節點
+# 安裝同上，enable 這個 service
+
+[Unit]
+Description=Archimedes Survey ROS2 Nodes
+After=network-online.target archimedes.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/archimedes-survey/ros2
+Environment="HOME=/home/pi"
+# Source ROS2 + workspace, then launch all nodes
+ExecStart=/bin/bash -c "\
+  source /opt/ros/humble/setup.bash && \
+  source /home/pi/archimedes-survey/ros2/install/setup.bash && \
+  ros2 launch archimedes_survey full_system.launch.py"
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

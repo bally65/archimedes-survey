@@ -1,0 +1,338 @@
+[
+  {
+    "name": "Flash Tidal Surge",
+    "duration_s": 54.80000000000051,
+    "survived": false,
+    "outcome": "FLOODED at t=54.8s, water=0.32m",
+    "max_tilt_deg": 0.0,
+    "min_clearance_m": -0.0,
+    "battery_used_pct": 0.6,
+    "distance_m": 4.39,
+    "max_force_N": 0.0,
+    "retreat_ok": true,
+    "details": {
+      "timeline": [
+        {
+          "t": 0.0,
+          "water_m": 0.0,
+          "x_m": -4.99,
+          "clearance_m": 0.1
+        },
+        {
+          "t": 10.1,
+          "water_m": 0.059,
+          "x_m": -4.18,
+          "clearance_m": 0.082
+        },
+        {
+          "t": 20.0,
+          "water_m": 0.117,
+          "x_m": -3.39,
+          "clearance_m": 0.064
+        },
+        {
+          "t": 30.0,
+          "water_m": 0.175,
+          "x_m": -2.59,
+          "clearance_m": 0.045
+        },
+        {
+          "t": 40.0,
+          "water_m": 0.233,
+          "x_m": -1.79,
+          "clearance_m": 0.027
+        },
+        {
+          "t": 50.0,
+          "water_m": 0.292,
+          "x_m": -0.99,
+          "clearance_m": 0.009
+        }
+      ],
+      "surge_height_m": 0.35
+    },
+    "survived_str": "FAIL"
+  },
+  {
+    "name": "Wave Impact",
+    "duration_s": 120.0,
+    "survived": true,
+    "outcome": "Stable in all conditions",
+    "max_tilt_deg": 14.63,
+    "min_clearance_m": 0.0,
+    "battery_used_pct": 0.0,
+    "distance_m": 0.0,
+    "max_force_N": 68.3,
+    "retreat_ok": true,
+    "details": {
+      "H=0.3m": {
+        "max_tilt_deg": 4.21,
+        "capsize_risk": false,
+        "max_wave_force_N": 19.3
+      },
+      "H=0.5m": {
+        "max_tilt_deg": 7.0,
+        "capsize_risk": false,
+        "max_wave_force_N": 32.1
+      },
+      "H=0.8m": {
+        "max_tilt_deg": 11.2,
+        "capsize_risk": false,
+        "max_wave_force_N": 51.8
+      },
+      "H=1.0m": {
+        "max_tilt_deg": 14.63,
+        "capsize_risk": false,
+        "max_wave_force_N": 68.3
+      }
+    },
+    "survived_str": "PASS"
+  },
+  {
+    "name": "Stuck in Soft Mud",
+    "duration_s": 0.15049339247869956,
+    "survived": true,
+    "outcome": "Escaped on attempt 1 with 100% power",
+    "max_tilt_deg": 0.0,
+    "min_clearance_m": 0.0,
+    "battery_used_pct": 0.0,
+    "distance_m": 0.05,
+    "max_force_N": 0.0,
+    "retreat_ok": true,
+    "details": {
+      "attempts": [
+        {
+          "attempt": 1,
+          "boost_pct": 100,
+          "net_force_N": 141.3,
+          "escape_time_s": 0.2,
+          "success": true
+        }
+      ],
+      "mud_moisture": 90.0,
+      "sink_depth_m": 0.05,
+      "F_drag_N": 562.7
+    },
+    "survived_str": "PASS"
+  },
+  {
+    "name": "Motor Thermal",
+    "duration_s": 3600.0,
+    "survived": true,
+    "outcome": "1h operation complete, peak T managed, distance=313m",
+    "max_tilt_deg": 0.0,
+    "min_clearance_m": 0.0,
+    "battery_used_pct": 7.7,
+    "distance_m": 313.2,
+    "max_force_N": 0.0,
+    "retreat_ok": true,
+    "details": {
+      "events": [
+        {
+          "t": 810.8,
+          "T_C": 70.0,
+          "event": "THERMAL_DERATE_70pct"
+        }
+      ],
+      "max_temp_C": 70.0
+    },
+    "survived_str": "PASS"
+  },
+  {
+    "name": "Battery Drain",
+    "duration_s": 6994.285714285715,
+    "survived": true,
+    "outcome": "Max safe range 290m one-way (4.8min), RTB at 58min",
+    "max_tilt_deg": 0.0,
+    "min_clearance_m": 0.0,
+    "battery_used_pct": 85.0,
+    "distance_m": 580.5,
+    "max_force_N": 0.0,
+    "retreat_ok": true,
+    "details": {
+      "usable_wh": 612.0,
+      "static_power_W": 27.0,
+      "motion_power_W": 288.0,
+      "travel_speed_ms": 0.083,
+      "max_range_one_way_m": 290.0,
+      "RTB_trigger_min": 58.3,
+      "battery_warn_20pct_min": 93.3,
+      "battery_warn_10pct_min": 104.9,
+      "reserve_pct": 15.0
+    },
+    "survived_str": "PASS"
+  },
+  {
+    "name": "Steep Dune 30deg",
+    "duration_s": 120.0,
+    "survived": true,
+    "outcome": "Max climbable slope: 30deg",
+    "max_tilt_deg": 30,
+    "min_clearance_m": 0.0,
+    "battery_used_pct": 0.0,
+    "distance_m": 0.0,
+    "max_force_N": 0.0,
+    "retreat_ok": true,
+    "details": {
+      "slope=10deg_moisture=30pct": {
+        "climbable": true,
+        "net_force_N": 427.0,
+        "F_thrust_N": 793.6,
+        "F_gravity_N": 54.5,
+        "F_resist_N": 312.1
+      },
+      "slope=10deg_moisture=50pct": {
+        "climbable": true,
+        "net_force_N": 534.8,
+        "F_thrust_N": 998.4,
+        "F_gravity_N": 54.5,
+        "F_resist_N": 409.1
+      },
+      "slope=10deg_moisture=70pct": {
+        "climbable": true,
+        "net_force_N": 544.0,
+        "F_thrust_N": 896.0,
+        "F_gravity_N": 54.5,
+        "F_resist_N": 297.5
+      },
+      "slope=15deg_moisture=30pct": {
+        "climbable": true,
+        "net_force_N": 403.2,
+        "F_thrust_N": 793.6,
+        "F_gravity_N": 81.2,
+        "F_resist_N": 309.1
+      },
+      "slope=15deg_moisture=50pct": {
+        "climbable": true,
+        "net_force_N": 510.7,
+        "F_thrust_N": 998.4,
+        "F_gravity_N": 81.2,
+        "F_resist_N": 406.5
+      },
+      "slope=15deg_moisture=70pct": {
+        "climbable": true,
+        "net_force_N": 519.5,
+        "F_thrust_N": 896.0,
+        "F_gravity_N": 81.2,
+        "F_resist_N": 295.2
+      },
+      "slope=20deg_moisture=30pct": {
+        "climbable": true,
+        "net_force_N": 381.2,
+        "F_thrust_N": 793.6,
+        "F_gravity_N": 107.4,
+        "F_resist_N": 305.0
+      },
+      "slope=20deg_moisture=50pct": {
+        "climbable": true,
+        "net_force_N": 488.3,
+        "F_thrust_N": 998.4,
+        "F_gravity_N": 107.4,
+        "F_resist_N": 402.7
+      },
+      "slope=20deg_moisture=70pct": {
+        "climbable": true,
+        "net_force_N": 496.5,
+        "F_thrust_N": 896.0,
+        "F_gravity_N": 107.4,
+        "F_resist_N": 292.1
+      },
+      "slope=25deg_moisture=30pct": {
+        "climbable": true,
+        "net_force_N": 361.2,
+        "F_thrust_N": 793.6,
+        "F_gravity_N": 132.7,
+        "F_resist_N": 299.8
+      },
+      "slope=25deg_moisture=50pct": {
+        "climbable": true,
+        "net_force_N": 467.7,
+        "F_thrust_N": 998.4,
+        "F_gravity_N": 132.7,
+        "F_resist_N": 398.0
+      },
+      "slope=25deg_moisture=70pct": {
+        "climbable": true,
+        "net_force_N": 475.2,
+        "F_thrust_N": 896.0,
+        "F_gravity_N": 132.7,
+        "F_resist_N": 288.1
+      },
+      "slope=30deg_moisture=30pct": {
+        "climbable": true,
+        "net_force_N": 343.2,
+        "F_thrust_N": 793.6,
+        "F_gravity_N": 157.0,
+        "F_resist_N": 293.4
+      },
+      "slope=30deg_moisture=50pct": {
+        "climbable": true,
+        "net_force_N": 449.1,
+        "F_thrust_N": 998.4,
+        "F_gravity_N": 157.0,
+        "F_resist_N": 392.3
+      },
+      "slope=30deg_moisture=70pct": {
+        "climbable": true,
+        "net_force_N": 455.7,
+        "F_thrust_N": 896.0,
+        "F_gravity_N": 157.0,
+        "F_resist_N": 283.3
+      }
+    },
+    "survived_str": "PASS"
+  },
+  {
+    "name": "Sensor Blackout",
+    "duration_s": 60.0,
+    "survived": true,
+    "outcome": "Dead reckoning 60s, position error=1.30m",
+    "max_tilt_deg": 0.0,
+    "min_clearance_m": 0.0,
+    "battery_used_pct": 0.0,
+    "distance_m": 5.0,
+    "max_force_N": 0.0,
+    "retreat_ok": true,
+    "details": {
+      "blackout_s": 60.0,
+      "dead_reckoning_fwd_error_m": 0.05,
+      "dead_reckoning_lat_error_m": 1.304,
+      "total_position_error_m": 1.305,
+      "strategy": [
+        "1. Switch to dead reckoning (screw RPM odometry)",
+        "2. Hold last known heading",
+        "3. Stop after 60s if sensors not restored",
+        "4. Emit acoustic/visual distress signal"
+      ]
+    },
+    "survived_str": "PASS"
+  },
+  {
+    "name": "Comm Loss Auto-Retreat",
+    "duration_s": 612.4096385542168,
+    "survived": true,
+    "outcome": "RTH complete in 602s, battery used 7.3%",
+    "max_tilt_deg": 0.0,
+    "min_clearance_m": 0.0,
+    "battery_used_pct": 7.3,
+    "distance_m": 50.0,
+    "max_force_N": 0.0,
+    "retreat_ok": true,
+    "details": {
+      "wait_s": 10.0,
+      "rth_distance_m": 50.0,
+      "rth_time_s": 602.0,
+      "energy_J": 190029.0,
+      "battery_used_pct": 7.3,
+      "protocol": [
+        "T+0s  : Detect comm loss (watchdog timeout 2s)",
+        "T+0s  : Wait for reconnection (5s)",
+        "T+5s  : Switch to LoRa 433MHz backup channel (5s)",
+        "T+10s : Activate RTH autonomy (GPS waypoint home)",
+        "RTH   : Navigate home at full speed",
+        "OnArrival: Stop, blink LED, emit 1kHz beep"
+      ]
+    },
+    "survived_str": "PASS"
+  }
+]

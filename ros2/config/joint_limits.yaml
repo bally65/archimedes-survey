@@ -1,0 +1,43 @@
+# Archimedes Survey Arm -- Joint Limits
+# All angles in radians, velocities in rad/s, efforts in Nm
+
+joint_limits:
+  j1_yaw:
+    has_position_limits: true
+    min_position: -1.047   # -60 deg
+    max_position:  1.047   #  60 deg
+    has_velocity_limits: true
+    max_velocity: 3.142    # 180 deg/s
+    has_effort_limits: true
+    max_effort: 1.27       # MG995 13 kg·cm @ 6V
+    has_deceleration_limits: false
+
+  j2_shoulder:
+    has_position_limits: true
+    min_position: 0.000    #   0 deg (stowed vertical)
+    max_position: 2.094    # 120 deg (fully forward)
+    has_velocity_limits: true
+    max_velocity: 2.094    # 120 deg/s
+    has_effort_limits: true
+    max_effort: 1.96       # DS3218MG 20 kg·cm @ 6V
+    has_deceleration_limits: false
+
+  j3_elbow:
+    has_position_limits: true
+    min_position: 0.000    #   0 deg
+    max_position: 2.356    # 135 deg
+    has_velocity_limits: true
+    max_velocity: 2.618    # 150 deg/s
+    has_effort_limits: true
+    max_effort: 1.27       # MG996R 13 kg·cm @ 6V
+    has_deceleration_limits: false
+
+  j4_tilt:                 # 換能器俯仰（MG90S micro servo ~NT$80）
+    has_position_limits: true
+    min_position: -0.524   # -30 deg
+    max_position:  0.524   #  30 deg
+    has_velocity_limits: true
+    max_velocity: 3.142    # 180 deg/s
+    has_effort_limits: true
+    max_effort: 0.176      # MG90S 1.8 kg·cm @ 4.8V
+    has_deceleration_limits: false

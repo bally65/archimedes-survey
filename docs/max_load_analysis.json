@@ -1,0 +1,156 @@
+{
+  "bearing_limits": {
+    "10": {
+      "q_ult_kPa": 89.23819617585396,
+      "q_allow_kPa": 29.746065391951316,
+      "F_max_N": 1269.5620709284824,
+      "M_max_kg": 129.41509387650177
+    },
+    "30": {
+      "q_ult_kPa": 129.86656660733829,
+      "q_allow_kPa": 43.28885553577943,
+      "F_max_N": 1847.5683542670665,
+      "M_max_kg": 188.33520430856947
+    },
+    "50": {
+      "q_ult_kPa": 150.05836635801052,
+      "q_allow_kPa": 50.019455452670165,
+      "F_max_N": 2134.8303587199634,
+      "M_max_kg": 217.61777356982296
+    },
+    "70": {
+      "q_ult_kPa": 84.39736140276428,
+      "q_allow_kPa": 28.132453800921425,
+      "F_max_N": 1200.6931282233268,
+      "M_max_kg": 122.3948142939171
+    },
+    "90": {
+      "q_ult_kPa": 29.27743572712703,
+      "q_allow_kPa": 9.759145242375677,
+      "F_max_N": 416.52031894459395,
+      "M_max_kg": 42.4587481085213
+    }
+  },
+  "propulsion_limits": {
+    "10": {
+      "M_stall_kg": 27.32,
+      "payload_limit_kg": 5.32,
+      "net_at_base_N": 10.44
+    },
+    "30": {
+      "M_stall_kg": 180.47,
+      "payload_limit_kg": 158.47,
+      "net_at_base_N": 401.1
+    },
+    "50": {
+      "M_stall_kg": 261.23,
+      "payload_limit_kg": 239.23,
+      "net_at_base_N": 714.42
+    },
+    "70": {
+      "M_stall_kg": 251.84,
+      "payload_limit_kg": 229.84,
+      "net_at_base_N": 497.86
+    },
+    "90": {
+      "M_stall_kg": 213.69,
+      "payload_limit_kg": 191.69,
+      "net_at_base_N": 210.44
+    }
+  },
+  "effective_limits": {
+    "10": {
+      "effective_max_kg": 27.32,
+      "payload_kg": 5.32,
+      "safety_factor": 1.24
+    },
+    "30": {
+      "effective_max_kg": 180.47,
+      "payload_kg": 158.47,
+      "safety_factor": 8.2
+    },
+    "50": {
+      "effective_max_kg": 217.62,
+      "payload_kg": 195.62,
+      "safety_factor": 9.89
+    },
+    "70": {
+      "effective_max_kg": 122.39,
+      "payload_kg": 100.39,
+      "safety_factor": 5.56
+    },
+    "90": {
+      "effective_max_kg": 42.46,
+      "payload_kg": 20.46,
+      "safety_factor": 1.93
+    }
+  },
+  "speed_vs_mass_m50": [
+    {
+      "total_mass_kg": 22,
+      "payload_kg": 0.0,
+      "speed_m_min": 5.26,
+      "F_net_N": 714.4
+    },
+    {
+      "total_mass_kg": 27,
+      "payload_kg": 5.0,
+      "speed_m_min": 5.26,
+      "F_net_N": 730.6
+    },
+    {
+      "total_mass_kg": 32,
+      "payload_kg": 10.0,
+      "speed_m_min": 5.26,
+      "F_net_N": 746.8
+    },
+    {
+      "total_mass_kg": 37,
+      "payload_kg": 15.0,
+      "speed_m_min": 5.26,
+      "F_net_N": 763.0
+    },
+    {
+      "total_mass_kg": 42,
+      "payload_kg": 20.0,
+      "speed_m_min": 5.26,
+      "F_net_N": 779.2
+    },
+    {
+      "total_mass_kg": 52,
+      "payload_kg": 30.0,
+      "speed_m_min": 5.26,
+      "F_net_N": 811.5
+    },
+    {
+      "total_mass_kg": 62,
+      "payload_kg": 40.0,
+      "speed_m_min": 5.26,
+      "F_net_N": 843.9
+    },
+    {
+      "total_mass_kg": 75,
+      "payload_kg": 53.0,
+      "speed_m_min": 5.26,
+      "F_net_N": 886.0
+    },
+    {
+      "total_mass_kg": 90,
+      "payload_kg": 68.0,
+      "speed_m_min": 5.26,
+      "F_net_N": 934.6
+    },
+    {
+      "total_mass_kg": 110,
+      "payload_kg": 88.0,
+      "speed_m_min": 5.26,
+      "F_net_N": 999.3
+    },
+    {
+      "total_mass_kg": 135,
+      "payload_kg": 113.0,
+      "speed_m_min": 5.26,
+      "F_net_N": 1080.2
+    }
+  ]
+}
