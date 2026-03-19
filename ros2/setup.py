@@ -45,6 +45,8 @@ setup(
             "hull_sonar_node    = archimedes_survey.hull_sonar_node:main",
             "ultrasound_node    = archimedes_survey.ultrasound_node:main",
             "acoustic_processor = archimedes_survey.acoustic_processor:main",
+            "acoustic_cscan     = archimedes_survey.acoustic_cscan:main",
+            "burrow_cnn         = archimedes_survey.burrow_cnn:main",
             # Recovery
             "recovery_behavior  = archimedes_survey.recovery_behavior:main",
         ],

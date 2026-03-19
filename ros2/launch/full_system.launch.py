@@ -8,12 +8,19 @@ full_system.launch.py
   - auto_navigate         (GPS 自主導航)
   - burrow_detector       (YOLOv8-nano 穴口偵測)
   - mission_logger        (GeoJSON 任務記錄)
+  - hull_sonar_node       (漲潮期船底聲納掃描)
+  - ultrasound_node       (手臂換能器 A-scan 採集)
+  - acoustic_processor    (T-SAFT 精確定位)
+  - acoustic_cscan        (A-core-2000 C-scan 三維重建)  ← NEW
+  - burrow_cnn            (3D-CNN 洞穴偵測 + 計數)      ← NEW
+  - recovery_behavior     (自主恢復)
 
 Run:
     ros2 launch archimedes_survey full_system.launch.py
 Optional args:
     model_path:=/home/pi/burrow_best.pt
     camera_height_m:=0.28
+    cnn_weights:=/home/pi/burrow_cnn.onnx
     debug:=true
 """
 
@@ -43,10 +50,18 @@ def generate_launch_description():
     arg_debug   = DeclareLaunchArgument("debug",
                       default_value="false",
                       description="Enable extra logging")
+    arg_cnn     = DeclareLaunchArgument("cnn_weights",
+                      default_value="",
+                      description="Path to burrow_cnn ONNX weights (empty = rule-based fallback)")
+    arg_cnn_thr = DeclareLaunchArgument("cnn_threshold",
+                      default_value="0.50",
+                      description="3D-CNN burrow presence threshold")
 
-    model_path = LaunchConfiguration("model_path")
-    cam_height = LaunchConfiguration("camera_height_m")
-    conf       = LaunchConfiguration("confidence_threshold")
+    model_path  = LaunchConfiguration("model_path")
+    cam_height  = LaunchConfiguration("camera_height_m")
+    conf        = LaunchConfiguration("confidence_threshold")
+    cnn_weights = LaunchConfiguration("cnn_weights")
+    cnn_thr     = LaunchConfiguration("cnn_threshold")
 
     # --------------- Nodes ---------------
     robot_state_pub = Node(
@@ -146,11 +161,42 @@ def generate_launch_description():
         ],
     )
 
+    # A-core-2000 C-scan 三維重建節點
+    # 訂閱 /ultrasound/raw_waveform → 發布 /acoustic/cscan_volume
+    cscan = Node(
+        package="archimedes_survey",
+        executable="acoustic_cscan",
+        name="acoustic_cscan",
+        output="screen",
+        parameters=[
+            {"min_ascans":       9},      # 3×3 最小掃描點數，觸發重建
+            {"attenuation_db_m": 60.0},   # 彰化粉砂 TVG 衰減係數
+            {"xy_half_m":        0.25},   # ±25cm 掃描範圍
+            {"z_max_m":          0.80},   # 最大穿透深度 80cm（200kHz）
+            {"auto_trigger":     True},
+        ],
+    )
+
+    # 3D-CNN 洞穴偵測 + 計數節點
+    # 訂閱 /acoustic/cscan_volume → 發布 /burrow/detection
+    burrow_cnn_node = Node(
+        package="archimedes_survey",
+        executable="burrow_cnn",
+        name="burrow_cnn",
+        output="screen",
+        parameters=[
+            {"weights_path": cnn_weights},  # 空字串時自動降級為規則推論
+            {"threshold":    cnn_thr},
+        ],
+    )
+
     return LaunchDescription([
         arg_model,
         arg_height,
         arg_conf,
         arg_debug,
+        arg_cnn,
+        arg_cnn_thr,
         LogInfo(msg="=== Archimedes Survey Full System Starting ==="),
         robot_state_pub,
         teleop,
@@ -158,8 +204,10 @@ def generate_launch_description():
         auto_nav,
         burrow_det,
         logger,
-        hull_sonar,   # 漲潮期船底掃描
-        ultrasound,   # 手臂換能器（保留）
-        acoustic,
+        hull_sonar,        # 漲潮期船底掃描
+        ultrasound,        # 手臂換能器 A-scan 採集
+        acoustic,          # T-SAFT 精確定位（原有）
+        cscan,             # C-scan 三維重建（A-core-2000 風格）
+        burrow_cnn_node,   # 3D-CNN 偵測 + 計數
         recovery,
     ])

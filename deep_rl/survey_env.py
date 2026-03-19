@@ -46,7 +46,7 @@ except ImportError:
 from loco_env import TERRAINS, LocoEnv
 
 XML_PATH         = os.path.join(os.path.dirname(__file__), "archimedes_survey.xml")
-NAV_ARRIVE_DIST  = 1.0    # m: navigation phase success
+NAV_ARRIVE_DIST  = 0.35   # m: navigation phase success — must be < arm reach (0.57m)
 PROBE_ARRIVE_DIST= 0.025  # m: probe tip inside burrow
 MAX_STEPS        = 5000
 LOCO_TORQUE      = 30.0

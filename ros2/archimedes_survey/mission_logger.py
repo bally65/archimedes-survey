@@ -69,6 +69,10 @@ class MissionLoggerNode(Node):
         self._last_lon      = None
         self._mission_start = datetime.now().isoformat()
         self._burrow_count  = 0
+        # Y-burrow pairing: Austinogebia edulis has 2 openings per individual (21-26cm apart)
+        # Track openings in metric coords to pair them before counting individuals
+        self._opening_positions: list[tuple[float, float]] = []  # (world_x_m, world_y_m)
+        self._Y_PAIR_DIST_M = 0.30   # openings within 30cm → same individual
         # 最新聲學量測結果（由 acoustic_processor 發布）
         self._last_acoustic: dict = {}
         # 最新內視鏡確認結果（由 endoscope_node 發布）
@@ -112,6 +116,17 @@ class MissionLoggerNode(Node):
         self._last_track_t = now
         self._write_track()
 
+    def _is_new_individual(self, wx: float, wy: float) -> bool:
+        """Return True if (wx,wy) is >Y_PAIR_DIST_M from all known openings.
+        Austinogebia edulis has Y-shaped burrows with 2 openings 21-26cm apart.
+        Openings within 30cm are treated as the same individual (not double-counted).
+        """
+        import math
+        for ox, oy in self._opening_positions:
+            if math.hypot(wx - ox, wy - oy) < self._Y_PAIR_DIST_M:
+                return False  # paired with existing opening → same individual
+        return True
+
     def _cb_burrow(self, msg: String):
         try:
             d = json.loads(msg.data)
@@ -122,6 +137,10 @@ class MissionLoggerNode(Node):
             return
 
         for det in d["detections"]:
+            wx = round(det.get("center_world_m", [0, 0])[0], 3)
+            wy = round(det.get("center_world_m", [0, 0])[1], 3)
+            is_new = self._is_new_individual(wx, wy)
+            self._opening_positions.append((wx, wy))
             entry = {
                 "type": "Feature",
                 "geometry": {
@@ -132,9 +151,11 @@ class MissionLoggerNode(Node):
                     "id":         self._burrow_count,
                     "timestamp":  datetime.now().isoformat(),
                     "confidence": round(det.get("confidence", 0), 3),
-                    "world_x_m":  round(det.get("center_world_m", [0, 0])[0], 3),
-                    "world_y_m":  round(det.get("center_world_m", [0, 0])[1], 3),
+                    "world_x_m":  wx,
+                    "world_y_m":  wy,
                     "frame_id":   d.get("frame_id", ""),
+                    # Y-burrow pairing: is this opening a new individual or paired with prior?
+                    "is_new_individual": is_new,
                     # 聲學量測（若有，future use）
                     "burrow_depth_m":         self._last_acoustic.get("burrow_depth_m"),
                     "burrow_angle_deg":       self._last_acoustic.get("burrow_angle_deg"),
@@ -147,8 +168,9 @@ class MissionLoggerNode(Node):
             self._burrows.append(entry)
             self._burrow_count += 1
             self._write_burrows()
+            pair_note = "NEW individual" if is_new else "paired opening (same individual)"
             self.get_logger().info(
-                f"Burrow #{self._burrow_count} logged: "
+                f"Opening #{self._burrow_count} logged [{pair_note}]: "
                 f"lat={self._last_lat:.6f} lon={self._last_lon:.6f} "
                 f"conf={det.get('confidence', 0):.2f}"
             )
@@ -201,13 +223,22 @@ class MissionLoggerNode(Node):
         self._track_path.write_text(json.dumps(fc, indent=2))
 
     def _write_burrows(self):
+        # Austinogebia edulis has Y-shaped burrows with 2 openings per individual
+        total_openings = len(self._burrows)
+        total_individuals = sum(
+            1 for b in self._burrows
+            if b["properties"].get("is_new_individual", True)
+        )
         fc = {
             "type": "FeatureCollection",
             "features": self._burrows,
             "metadata": {
-                "mission_start": self._mission_start,
-                "total_burrows": len(self._burrows),
-                "species_target": "Lysiosquillina",
+                "mission_start":     self._mission_start,
+                "total_openings":    total_openings,
+                "total_individuals": total_individuals,  # openings paired, ÷2 logic applied
+                "species_target":    "Austinogebia edulis",
+                "note": "Y-burrow: 2 openings per individual (21-26cm apart). "
+                        "is_new_individual=false means paired with prior opening.",
             },
         }
         self._burrow_path.write_text(json.dumps(fc, indent=2))

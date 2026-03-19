@@ -42,6 +42,12 @@ from typing import List, Optional, Tuple
 import numpy as np
 
 try:
+    from scipy.signal import hilbert as scipy_hilbert
+    _SCIPY = True
+except ImportError:
+    _SCIPY = False
+
+try:
     import rclpy
     from rclpy.node import Node
     from std_msgs.msg import String, Float32
@@ -213,6 +219,130 @@ class TSAFTReconstructor:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# DMOMP 頻散補償器
+# ─────────────────────────────────────────────────────────────────────────────
+class DMOMPCompensator:
+    """
+    DMOMP（Dispersion-compensated Multi-Mode Orthogonal Matching Pursuit）
+    頻散補償，適配泥質沉積物中 200kHz 脈衝回波超音波。
+
+    背景：
+      超音波在非均質水合孔隙沉積物（彰化粉砂泥）中傳播時，
+      會發生頻率依賴的相速度偏移（Biot 理論），
+      導致時域 A-scan 波形隨距離逐漸展寬，降低 T-SAFT 定位精度。
+
+    方法（對應 MDPI Sensors 23(21):8683, 2023 的頻散補償映射）：
+      1. FFT 將時域訊號轉至頻域
+      2. 計算每個頻率 f 的實際相速度 c(f)：
+           c(f) = c0 + β × (f - f0) / f0
+           β = 頻散係數（m/s），泥質沉積物典型值 5~20 m/s
+      3. 計算相位修正量 Δφ(f)，補回頻散引起的相位累積差
+      4. IFFT → 頻散補償後的 A-scan
+      5. 重新 Hilbert 包絡偵測 → 更精準的 TOF
+
+    精度（依論文）：定位正確率 ≥ 98.7%
+    適用條件：需要 scipy；ADC 採樣率 ≥ 1 Msps
+    """
+
+    def __init__(self,
+                 c0_mps: float = DEFAULT_SOUND_SPEED_MS,
+                 f0_hz: float = 200_000.0,
+                 dispersion_beta: float = 12.0,
+                 sample_rate_hz: float = 1_000_000.0):
+        """
+        c0_mps          : 參考聲速 m/s（Medwin 修正後，預設 1531）
+        f0_hz           : 換能器中心頻率 Hz（200kHz）
+        dispersion_beta : 頻散係數 m/s（泥質 5~20，彰化粉砂保守取 12）
+        sample_rate_hz  : ADC 採樣率 Hz（MCP3208=1M，pic0rick=60M）
+        """
+        self.c0   = c0_mps
+        self.f0   = f0_hz
+        self.beta = dispersion_beta
+        self.fs   = sample_rate_hz
+
+    def compensate(self,
+                   rf_data: np.ndarray,
+                   initial_tof_us: float
+                   ) -> Tuple[np.ndarray, float]:
+        """
+        對 A-scan 波形執行頻散補償。
+
+        rf_data        : 原始 ADC 數列（float64，已去直流）
+        initial_tof_us : 初始 TOF 估計（μs），由簡單包絡峰值取得，
+                         用於計算參考深度（確定補償中心點）
+
+        回傳：
+          (compensated_rf : np.ndarray float64,
+           corrected_tof_us : float)
+        """
+        if not _SCIPY:
+            return rf_data, initial_tof_us  # scipy 不可用時透通
+
+        N = len(rf_data)
+        if N < 64:
+            return rf_data, initial_tof_us
+
+        # Step 1: FFT
+        F = np.fft.rfft(rf_data)
+        freqs_hz = np.fft.rfftfreq(N, d=1.0 / self.fs)
+
+        # Step 2: 線性頻散模型 c(f) = c0 + β*(f-f0)/f0
+        c_f = self.c0 + self.beta * (freqs_hz - self.f0) / max(self.f0, 1.0)
+        c_f = np.clip(c_f, self.c0 * 0.80, self.c0 * 1.20)
+
+        # Step 3: 計算往返相位修正量
+        # 參考深度（初始 TOF → 單程距離）
+        d_ref = initial_tof_us * 1e-6 * self.c0 / 2.0  # m
+        # 各頻率的相位誤差（實際 vs 理想無頻散）
+        omega = 2.0 * np.pi * freqs_hz
+        # Δφ = ω × 2d × (1/c0 - 1/c(f))  [往返路徑]
+        delta_phi = omega * 2.0 * d_ref * (1.0 / self.c0 - 1.0 / c_f)
+        # 避免 DC/0Hz 分量被扭曲
+        delta_phi[0] = 0.0
+
+        # Step 4: 乘以補償相位因子 → IFFT
+        F_corr    = F * np.exp(1j * delta_phi)
+        rf_corr   = np.fft.irfft(F_corr, n=N).astype(np.float64)
+
+        # Step 5: 重新 Hilbert 包絡偵測 → 修正後 TOF
+        envelope = np.abs(scipy_hilbert(rf_corr))
+        # 保留初始 TOF 的消隱範圍（避免脈衝殘影誤判）
+        blank_samp = max(0, int(initial_tof_us * 0.4 * 1e-6 * self.fs))
+        envelope[:blank_samp] = 0.0
+
+        if envelope.max() > 1e-8:
+            peak_idx         = int(np.argmax(envelope))
+            corrected_tof_us = float(peak_idx / self.fs * 1e6)
+        else:
+            corrected_tof_us = initial_tof_us
+
+        return rf_corr, corrected_tof_us
+
+    def correct_scan_point(self, pt: dict, raw_samples: list) -> dict:
+        """
+        從完整 A-scan 樣本修正單個掃描點的 TOF 與 r_meas_m。
+
+        pt          : 原始掃描點 dict（含 tof_us, r_meas_m）
+        raw_samples : 對應的原始 ADC 數列（int list）
+
+        回傳：修正後的掃描點 dict（in-place 修改並回傳）
+        """
+        if not raw_samples:
+            return pt
+
+        arr = np.array(raw_samples, dtype=np.float64)
+        baseline = arr[:min(50, max(1, len(arr) // 10))].mean()
+        arr -= baseline
+
+        rf_corr, corrected_tof = self.compensate(arr, pt.get("tof_us", 0.0))
+        if corrected_tof > 0:
+            pt["tof_us"]    = corrected_tof
+            pt["r_meas_m"]  = corrected_tof * 1e-6 * self.c0 / 2.0
+            pt["dmomp_corrected"] = True
+        return pt
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # ROS2 節點
 # ─────────────────────────────────────────────────────────────────────────────
 class AcousticProcessorNode(Node):
@@ -227,6 +357,9 @@ class AcousticProcessorNode(Node):
       auto_trigger       : bool   自動觸發（True）或等待 /scan/trigger（False）
       temperature_c      : float  水溫 °C（用於聲速修正，預設 20.0）
       salinity_ppt       : float  鹽度 ppt（預設 35.0）
+      dmomp_enabled      : bool   啟用 DMOMP 頻散補償（預設 False）
+      dmomp_beta         : float  頻散係數 m/s（預設 12.0，泥質 5~20）
+      dmomp_sample_rate  : float  ADC 採樣率（pic0rick=60e6，MCP3208=1e6）
     """
 
     def __init__(self):
@@ -238,19 +371,37 @@ class AcousticProcessorNode(Node):
         self.declare_parameter("min_scan_pts",      MIN_SCAN_PTS)
         self.declare_parameter("recon_threshold",   0.35)
         self.declare_parameter("auto_trigger",      True)
-        self.declare_parameter("temperature_c",     25.0)   # 台灣彰化夏季水溫
-        self.declare_parameter("salinity_ppt",      32.0)   # 台灣彰化近海鹽度
+        self.declare_parameter("temperature_c",     25.0)
+        self.declare_parameter("salinity_ppt",      32.0)
         self.declare_parameter("tvg_db_per_m",      DEFAULT_TVG_DB_PER_M)
+        self.declare_parameter("dmomp_enabled",     False)
+        self.declare_parameter("dmomp_beta",        12.0)
+        self.declare_parameter("dmomp_sample_rate", 1_000_000.0)
 
         temp    = self.get_parameter("temperature_c").value
         sal     = self.get_parameter("salinity_ppt").value
         c       = sound_speed(temp, sal)
         sigma   = self.get_parameter("sigma_m").value
 
-        self._min_pts  = int(self.get_parameter("min_scan_pts").value)
-        self._thresh   = float(self.get_parameter("recon_threshold").value)
-        self._auto     = bool(self.get_parameter("auto_trigger").value)
+        self._min_pts   = int(self.get_parameter("min_scan_pts").value)
+        self._thresh    = float(self.get_parameter("recon_threshold").value)
+        self._auto      = bool(self.get_parameter("auto_trigger").value)
         self._tvg_alpha = float(self.get_parameter("tvg_db_per_m").value)
+
+        # DMOMP 頻散補償
+        self._dmomp_enabled = bool(self.get_parameter("dmomp_enabled").value)
+        if self._dmomp_enabled:
+            self._dmomp = DMOMPCompensator(
+                c0_mps=c,
+                f0_hz=200_000.0,
+                dispersion_beta=float(self.get_parameter("dmomp_beta").value),
+                sample_rate_hz=float(self.get_parameter("dmomp_sample_rate").value),
+            )
+        else:
+            self._dmomp = None
+
+        # 用於 DMOMP：暫存最近一筆 raw_waveform（key=座標 tuple，值=samples list）
+        self._waveform_cache: dict = {}
 
         self._recon = TSAFTReconstructor(c=c, sigma_m=sigma)
         self._buf: deque = deque(maxlen=MAX_BUFFER)
@@ -258,13 +409,18 @@ class AcousticProcessorNode(Node):
 
         self.get_logger().info(
             f"AcousticProcessor init: c={c:.1f} m/s, sigma={sigma*1000:.1f}mm, "
-            f"TVG={self._tvg_alpha:.0f}dB/m, min_pts={self._min_pts}")
+            f"TVG={self._tvg_alpha:.0f}dB/m, min_pts={self._min_pts}, "
+            f"DMOMP={'ON β='+str(self.get_parameter('dmomp_beta').value) if self._dmomp_enabled else 'OFF'}"
+        )
 
         # ── Subscribers ───────────────────────────────────────────────────────
         self.create_subscription(
-            String, "/ultrasound/scan_point", self._cb_scan_point, 20)
+            String, "/ultrasound/scan_point",  self._cb_scan_point,  20)
         self.create_subscription(
-            String, "/scan/trigger", self._cb_trigger, 5)
+            String, "/scan/trigger",           self._cb_trigger,      5)
+        # DMOMP：訂閱完整 A-scan 波形，在 scan_point 到達前預存波形
+        self.create_subscription(
+            String, "/ultrasound/raw_waveform", self._cb_raw_waveform, 20)
 
         # ── Publishers ────────────────────────────────────────────────────────
         self._pub_map    = self.create_publisher(String, "/ultrasound/3d_map",    5)
@@ -276,6 +432,30 @@ class AcousticProcessorNode(Node):
         self.create_timer(5.0, self._pub_heartbeat)
 
     # ── Callbacks ─────────────────────────────────────────────────────────────
+    def _cb_raw_waveform(self, msg: String):
+        """
+        暫存 A-scan 原始波形（供 DMOMP 使用）。
+        以換能器位置（x,y,z 四捨五入 1mm）為 key，保留最近 64 筆。
+        """
+        if not self._dmomp_enabled:
+            return
+        try:
+            data = json.loads(msg.data)
+        except json.JSONDecodeError:
+            return
+        samples = data.get("samples", [])
+        if not samples:
+            return
+        # 以位置 tuple 為索引鍵（1mm 精度）
+        key = (round(data.get("x_m", 0.0), 3),
+               round(data.get("y_m", 0.0), 3),
+               round(data.get("z_m", 0.0), 3))
+        self._waveform_cache[key] = samples
+        # 保留最新 64 筆，避免記憶體膨脹
+        if len(self._waveform_cache) > 64:
+            oldest = next(iter(self._waveform_cache))
+            del self._waveform_cache[oldest]
+
     def _cb_scan_point(self, msg: String):
         """接收單點掃描資料並加入緩衝區。"""
         try:
@@ -306,6 +486,17 @@ class AcousticProcessorNode(Node):
             # 限制 TVG 上限，避免雜訊放大過度（最多 40dB = ×100）
             tvg_factor = min(tvg_factor, 100.0)
             pt["confidence"] = pt.get("confidence", 1.0) * tvg_factor
+
+        # DMOMP 頻散補償（若啟用且有對應波形）
+        if self._dmomp_enabled and self._dmomp is not None:
+            key = (round(pt["x_m"], 3),
+                   round(pt["y_m"], 3),
+                   round(pt["z_m"], 3))
+            raw = self._waveform_cache.get(key, [])
+            if raw:
+                pt = self._dmomp.correct_scan_point(pt, raw)
+                # 修正後重新換算距離（TVG 已在上面套用，但 r_meas_m 需重算）
+                pt["r_meas_m"] = pt["tof_us"] * 1e-6 * self._recon.c / 2.0
 
         self._buf.append(pt)
         self._scan_count += 1

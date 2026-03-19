@@ -153,7 +153,7 @@ class RLAgentNode(Node):
 
         if self._burrow_pos is not None:
             nav_dist = float(np.linalg.norm(self._base_pos - self._burrow_pos[:2]))
-            if nav_dist < 1.0 and self._nav_phase == 0:
+            if nav_dist < 0.35 and self._nav_phase == 0:  # 0.35m < arm reach 0.57m
                 self._nav_phase = 1
                 self.get_logger().info("Arrived at burrow — switching to PROBE phase")
 
