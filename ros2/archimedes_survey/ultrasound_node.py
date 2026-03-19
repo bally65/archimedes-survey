@@ -3,8 +3,12 @@ ultrasound_node.py
 ==================
 超音波換能器 ROS2 節點：對準洞穴開口量測深度與傾斜角。
 
-硬體對應（v2.0）：
-  換能器型號：PZT-5A Φ20mm 200kHz（CTDCO 台灣陶瓷公司）
+硬體對應（v2.1）：
+  換能器型號：PZT-5A Φ20mm
+    ● 泥質底質（彰化/鹿港）：200kHz（CTDCO 台灣陶瓷公司）
+    ● 沙質底質（潮間帶）   ：推薦 50–100kHz（Biot 理論：沙粒 <2mm，
+                              200kHz 波長≈7.5mm 接近 Rayleigh 散射臨界，
+                              50kHz 波長≈3cm 規避散射損失）
   驅動電路  ：HV7361（±100V Active RTZ 脈衝 IC）
   接收鏈    ：AD8331 TGC VGA（-28~+92dB，程式控制）
   DAQ 平台  ：pic0rick（RP2040, 60Msps）或 MCP3208（1Msps 降規）
@@ -86,10 +90,15 @@ PIC0RICK_PORT   = "/dev/ttyACM0"      # USB CDC 虛擬串口（Linux RPi4）
 
 PULSE_WIDTH_US  = 5           # 觸發脈衝寬度 (μs)
 SOUND_SPEED_MPS = 1500.0      # 泥沙中聲速 (m/s)
+# 飽和沙中聲速 1500–1850 m/s（Biot 理論），乾沙 200–600 m/s
+# 本節點預設飽和狀態（潮汐帶，水分充足）
 SAMPLE_RATE_HZ  = 1_000_000   # ADC 採樣率 (Hz)
 MAX_DEPTH_M     = 2.0         # 最大量測深度 (m) → 最大 TOF = 2.67 ms
 MIN_DEPTH_M     = 0.02        # 最小量測深度 20mm（防止近場反射誤判）
 TOF_TIMEOUT_US  = int(MAX_DEPTH_M * 2 / SOUND_SPEED_MPS * 1e6)  # ≈ 2667 μs
+
+# SNR 門檻：低於此值標記 needs_verification（依 Biot 理論研究報告建議 10dB）
+SNR_MIN_DB = 10.0
 
 # T-SAFT 基本參數（掃描時使用）
 TSAFT_GRID_SPACING_MM = 2.5
@@ -101,12 +110,16 @@ def envelope_peak_tof(samples: list,
                       c_mps: float = SOUND_SPEED_MPS,
                       blank_us: float = 26.7) -> tuple:
     """
-    Hilbert 轉換包絡偵測 → TOF 與信心值。
-    scipy.signal.hilbert 不可用時退回簡單閾值法。
+    DPTM（Defect Peaks Tracking Model）包絡峰值追蹤 → TOF 與信心值。
+
+    算法（依 Biot 理論研究報告 §複雜背景下的空腔識別）：
+      1. Hilbert 轉換取解析包絡
+      2. 拋物線插值（sub-sample 精度）：消除採樣抖動，比純 argmax 穩定
+      3. 信心值 = 峰值 / 99th percentile（高峰值相對背景 → 高信心）
 
     samples       : 原始 ADC 數列
     sample_rate_hz: ADC 採樣率 Hz（MCP3208=1Msps，pic0rick=60Msps）
-    blank_us      : 消隱時間 μs（忽略近場反射）
+    blank_us      : 消隱時間 μs（忽略近場反射，MIN_DEPTH_M 對應）
     回傳 (tof_us, confidence)，tof_us=-1 表示無有效回波
     """
     arr = np.array(samples, dtype=np.float64)
@@ -126,8 +139,23 @@ def envelope_peak_tof(samples: list,
         envelope[:blank_samp] = 0.0
         if envelope.max() < 1e-6:
             return -1.0, 0.0
-        peak_idx   = int(np.argmax(envelope))
-        tof_us     = peak_idx / sample_rate_hz * 1e6
+        peak_idx = int(np.argmax(envelope))
+
+        # 拋物線插值（DPTM 核心）：在峰值附近 3 點做次採樣精化
+        if 0 < peak_idx < n - 1:
+            y0 = envelope[peak_idx - 1]
+            y1 = envelope[peak_idx]
+            y2 = envelope[peak_idx + 1]
+            denom = 2.0 * (y0 - 2.0 * y1 + y2)
+            if abs(denom) > 1e-12:
+                delta = (y0 - y2) / denom  # sub-sample 偏移量 (-0.5 ~ 0.5)
+                peak_frac = peak_idx + delta
+            else:
+                peak_frac = float(peak_idx)
+        else:
+            peak_frac = float(peak_idx)
+
+        tof_us     = peak_frac / sample_rate_hz * 1e6
         confidence = float(min(1.0, envelope[peak_idx] / (np.percentile(envelope, 99) + 1e-12)))
     else:
         # 退回閾值法（scipy 未安裝）
@@ -142,6 +170,72 @@ def envelope_peak_tof(samples: list,
         confidence = float(min(1.0, abs_arr[peak_idx] / (abs_arr.max() + 1e-12)))
 
     return tof_us, confidence
+
+
+def phase_reversal_detect(samples: list, tof_us: float,
+                           sample_rate_hz: float = SAMPLE_RATE_HZ,
+                           window_n: int = 8) -> bool:
+    """
+    偵測回波相位反轉（Phase Reversal）。
+
+    物理依據（Biot 研究報告 §相位反轉）：
+      飽和沙（高阻抗）→ 空氣空腔（極低阻抗）：反射係數為負 → 180° 相位翻轉
+      飽和沙（高阻抗）→ 水充填空腔：反射係數為正 → 相位不變
+
+    回傳 True 表示相位反轉（高機率為空氣空腔）。
+    """
+    if tof_us <= 0 or not _SCIPY_AVAILABLE:
+        return False
+
+    arr = np.array(samples, dtype=np.float64)
+    n = len(arr)
+    baseline = arr[:min(50, max(1, n // 10))].mean()
+    arr -= baseline
+
+    peak_idx = int(tof_us * 1e-6 * sample_rate_hz)
+    if peak_idx <= 0 or peak_idx >= n:
+        return False
+
+    # 取峰值區間的原始信號（未取包絡）
+    start = max(0, peak_idx - window_n // 2)
+    end   = min(n, peak_idx + window_n // 2 + 1)
+    segment = arr[start:end]
+    if len(segment) == 0:
+        return False
+
+    # 若峰值附近區間最大絕對值點為負值 → 相位反轉
+    max_abs_idx = int(np.argmax(np.abs(segment)))
+    return float(segment[max_abs_idx]) < 0.0
+
+
+def compute_snr_db(samples: list, tof_us: float,
+                   sample_rate_hz: float = SAMPLE_RATE_HZ,
+                   noise_window: int = 50) -> float:
+    """
+    計算回波 SNR（dB）。
+
+    noise_rms = 消隱期前 noise_window 個採樣的 RMS
+    signal_amp = 峰值附近最大振幅
+
+    SNR < SNR_MIN_DB（10dB）時，應標記 needs_verification。
+    """
+    if tof_us <= 0:
+        return -99.0
+
+    arr = np.array(samples, dtype=np.float64)
+    n = len(arr)
+    baseline = arr[:min(50, max(1, n // 10))].mean()
+    arr -= baseline
+
+    noise_end = min(noise_window, max(1, int(tof_us * 1e-6 * sample_rate_hz * 0.3)))
+    noise_rms = float(np.sqrt(np.mean(arr[:noise_end] ** 2)) + 1e-12)
+
+    peak_idx = int(tof_us * 1e-6 * sample_rate_hz)
+    start = max(0, peak_idx - 5)
+    end   = min(n, peak_idx + 6)
+    signal_amp = float(np.max(np.abs(arr[start:end])) + 1e-12)
+
+    return float(20.0 * np.log10(signal_amp / noise_rms))
 
 
 # ---------------------------------------------------------------------------
@@ -563,17 +657,41 @@ class UltrasoundNode(Node):
 
         # 發布完整 A-scan 波形（給 acoustic_cscan.py C-scan 重建使用）
         if last_waveform is not None:
+            fs = self._transducer.actual_sample_rate_hz
+
+            # 相位反轉偵測（Biot 研究報告：空氣空腔 → 180° 反轉）
+            phase_rev = phase_reversal_detect(last_waveform, avg_tof, fs)
+            snr_db    = compute_snr_db(last_waveform, avg_tof, fs)
+
+            # 空腔類型推斷
+            if snr_db < SNR_MIN_DB:
+                cavity_type = "unknown_low_snr"
+            elif phase_rev:
+                cavity_type = "air_cavity"     # 180° 反轉 + 高阻抗對比
+            else:
+                cavity_type = "water_filled"   # 相位未反轉
+
+            needs_verification = (snr_db < SNR_MIN_DB) or (avg_conf < 0.5)
+
             waveform_msg = {
-                "x_m":            tx,
-                "y_m":            ty,
-                "z_m":            tz,
-                "samples":        last_waveform,
-                "sample_rate_hz": self._transducer.actual_sample_rate_hz,
-                "tof_us":         float(avg_tof),
-                "confidence":     float(avg_conf),
-                "timestamp":      info["timestamp"],
+                "x_m":                tx,
+                "y_m":                ty,
+                "z_m":                tz,
+                "samples":            last_waveform,
+                "sample_rate_hz":     fs,
+                "tof_us":             float(avg_tof),
+                "confidence":         float(avg_conf),
+                "snr_db":             round(snr_db, 1),
+                "phase_reversal":     phase_rev,
+                "cavity_type":        cavity_type,
+                "needs_verification": needs_verification,
+                "timestamp":          info["timestamp"],
             }
             self._pub_waveform.publish(String(data=json.dumps(waveform_msg)))
+
+            self.get_logger().info(
+                f"  cavity={cavity_type}  SNR={snr_db:.1f}dB"
+                + ("  [VERIFY]" if needs_verification else ""))
 
         self.get_logger().info(
             f"深度 {depth_cm:.1f} cm  信心 {avg_conf:.2f}  "

@@ -66,8 +66,11 @@ MAX_BUFFER   = 256                # 掃描緩衝區上限
 
 # TVG 衰減係數（文獻來源：PMC11293796, PMC11531588）
 TVG_MUD_DB_PER_M  = 50.0         # 泥質沉積物（鹿港蝦猴棲地）
-TVG_SAND_DB_PER_M = 102.0        # 細砂沉積物
+TVG_SAND_DB_PER_M = 102.0        # 細砂沉積物（Biot 研究報告：Q=5~15，衰減更強）
 DEFAULT_TVG_DB_PER_M = 60.0      # 彰化粉砂（泥砂混合，保守估計）
+
+# SNR 門檻（Biot 研究報告建議：< 10dB 須人工確認）
+SNR_MIN_DB = 10.0
 
 # 最佳入射角（IEEE 7890758: 30° off-normal 最佳偵測空腔）
 OPTIMAL_INCIDENT_DEG = 30.0      # J4_TILT 目標角度（transducer 前傾）
@@ -216,6 +219,53 @@ class TSAFTReconstructor:
         mean_intensity = sum(p["intensity"] for p in boundary) / len(boundary)
 
         return max_depth_mm / 10.0, diameter_mm, float(mean_intensity)
+
+    def estimate_volume_mm3(self, boundary: List[dict], n_slices: int = 10) -> float:
+        """
+        Simpson 積分法估算洞穴體積（mm³）。
+
+        依 Biot 研究報告 §辛普森積分法：對各深度切片的橫截面面積沿 Z 積分。
+        每個切片面積 = 橢圓近似（span_x × span_y × π / 4）。
+
+        boundary  : extract_burrow_boundary() 輸出的邊界點列表
+        n_slices  : 深度方向切片數（須為偶數，Simpson 要求；不足時補齊）
+        回傳：volume_mm3（float），無法計算時為 0.0
+        """
+        if not boundary or len(boundary) < 4:
+            return 0.0
+
+        z_vals = sorted(set(p["z_mm"] for p in boundary))
+        if len(z_vals) < 2:
+            return 0.0
+
+        z_min, z_max = min(z_vals), max(z_vals)
+        if z_max - z_min < 1.0:
+            return 0.0
+
+        # 確保切片數為偶數（Simpson 要求）
+        n = max(2, n_slices if n_slices % 2 == 0 else n_slices + 1)
+        z_slices = np.linspace(z_min, z_max, n + 1)
+        dz = (z_max - z_min) / n
+
+        def slice_area(z_center: float, dz_half: float = dz * 0.5) -> float:
+            pts = [p for p in boundary
+                   if abs(p["z_mm"] - z_center) <= dz_half]
+            if len(pts) < 2:
+                return 0.0
+            xs = [p["x_mm"] for p in pts]
+            ys = [p["y_mm"] for p in pts]
+            rx = (max(xs) - min(xs)) / 2.0
+            ry = (max(ys) - min(ys)) / 2.0
+            return math.pi * rx * ry  # 橢圓面積
+
+        areas = np.array([slice_area(z) for z in z_slices])
+
+        # Simpson 積分：(dz/3) × [A0 + 4A1 + 2A2 + 4A3 + … + An]
+        coeff = np.ones(n + 1)
+        coeff[1:-1:2] = 4.0  # 奇數項
+        coeff[2:-2:2] = 2.0  # 偶數項（非端點）
+        volume = float((dz / 3.0) * np.dot(coeff, areas))
+        return max(0.0, volume)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -434,27 +484,39 @@ class AcousticProcessorNode(Node):
     # ── Callbacks ─────────────────────────────────────────────────────────────
     def _cb_raw_waveform(self, msg: String):
         """
-        暫存 A-scan 原始波形（供 DMOMP 使用）。
+        暫存 A-scan 原始波形（供 DMOMP + 相位反轉分析使用）。
         以換能器位置（x,y,z 四捨五入 1mm）為 key，保留最近 64 筆。
+        同時將 cavity_type / snr_db / needs_verification 轉存，
+        供 _cb_scan_point 附加到掃描點。
         """
-        if not self._dmomp_enabled:
-            return
         try:
             data = json.loads(msg.data)
         except json.JSONDecodeError:
             return
         samples = data.get("samples", [])
-        if not samples:
-            return
-        # 以位置 tuple 為索引鍵（1mm 精度）
         key = (round(data.get("x_m", 0.0), 3),
                round(data.get("y_m", 0.0), 3),
                round(data.get("z_m", 0.0), 3))
-        self._waveform_cache[key] = samples
-        # 保留最新 64 筆，避免記憶體膨脹
-        if len(self._waveform_cache) > 64:
-            oldest = next(iter(self._waveform_cache))
-            del self._waveform_cache[oldest]
+
+        # 儲存波形（DMOMP 用）
+        if self._dmomp_enabled and samples:
+            self._waveform_cache[key] = samples
+            if len(self._waveform_cache) > 64:
+                oldest = next(iter(self._waveform_cache))
+                del self._waveform_cache[oldest]
+
+        # 儲存空腔分類欄位（不依賴 DMOMP 啟用狀態）
+        if not hasattr(self, "_cavity_meta_cache"):
+            self._cavity_meta_cache: dict = {}
+        self._cavity_meta_cache[key] = {
+            "cavity_type":        data.get("cavity_type", "unknown"),
+            "snr_db":             data.get("snr_db", None),
+            "phase_reversal":     data.get("phase_reversal", False),
+            "needs_verification": data.get("needs_verification", False),
+        }
+        if len(self._cavity_meta_cache) > 64:
+            oldest = next(iter(self._cavity_meta_cache))
+            del self._cavity_meta_cache[oldest]
 
     def _cb_scan_point(self, msg: String):
         """接收單點掃描資料並加入緩衝區。"""
@@ -486,6 +548,14 @@ class AcousticProcessorNode(Node):
             # 限制 TVG 上限，避免雜訊放大過度（最多 40dB = ×100）
             tvg_factor = min(tvg_factor, 100.0)
             pt["confidence"] = pt.get("confidence", 1.0) * tvg_factor
+
+        # 注入空腔分類欄位（來自 raw_waveform 的 phase_reversal 分析）
+        if hasattr(self, "_cavity_meta_cache"):
+            key = (round(pt["x_m"], 3),
+                   round(pt["y_m"], 3),
+                   round(pt["z_m"], 3))
+            meta = self._cavity_meta_cache.get(key, {})
+            pt.update(meta)
 
         # DMOMP 頻散補償（若啟用且有對應波形）
         if self._dmomp_enabled and self._dmomp is not None:
@@ -540,6 +610,7 @@ class AcousticProcessorNode(Node):
         boundary = self._recon.extract_burrow_boundary(
             gx, gy, gz, intensity, self._thresh)
         depth_cm, diam_mm, conf = self._recon.estimate_burrow_depth(boundary)
+        volume_mm3 = self._recon.estimate_volume_mm3(boundary)
 
         # ── 發布 3D Map（稀疏格點，僅強度 > 0.1 的點）─────────────────────
         i_max = intensity.max()
@@ -559,6 +630,32 @@ class AcousticProcessorNode(Node):
                 "points": pc_pts,
             })))
 
+        # ── 空腔類型統計（來自 waveform 的 phase_reversal 欄位）────────────
+        cavity_types = [p.get("cavity_type", "unknown") for p in pts
+                        if "cavity_type" in p]
+        snr_vals     = [p.get("snr_db", 0.0) for p in pts if "snr_db" in p]
+        avg_snr      = float(np.mean(snr_vals)) if snr_vals else None
+
+        # 多數投票決定空腔類型
+        if cavity_types:
+            air_votes   = cavity_types.count("air_cavity")
+            water_votes = cavity_types.count("water_filled")
+            if air_votes > water_votes:
+                cavity_type = "air_cavity"
+            elif water_votes > air_votes:
+                cavity_type = "water_filled"
+            else:
+                cavity_type = "unknown"
+        else:
+            cavity_type = "unknown"
+
+        # 需確認標記：SNR 不足 或 信心低
+        needs_verification = (
+            (avg_snr is not None and avg_snr < SNR_MIN_DB) or
+            conf < 0.4 or
+            depth_cm <= 0
+        )
+
         # ── 發布洞穴摘要 ────────────────────────────────────────────────────
         burrow_msg = {
             "timestamp": time.time(),
@@ -567,20 +664,31 @@ class AcousticProcessorNode(Node):
             "burrow_depth_m": round(depth_cm / 100.0, 4),
             "burrow_depth_cm": round(depth_cm, 2),
             "burrow_diameter_mm": round(diam_mm, 1),
+            "burrow_volume_mm3": round(volume_mm3, 1),
+            "burrow_volume_cm3": round(volume_mm3 / 1000.0, 3),
             "ultrasound_confidence": round(conf, 3),
+            "avg_snr_db": round(avg_snr, 1) if avg_snr is not None else None,
+            "cavity_type": cavity_type,
+            "needs_verification": needs_verification,
             "boundary_pts": len(boundary),
             # GeoJSON 擴充欄位（與 mission_logger.py 介接）
             "geojson_extra": {
-                "burrow_depth_m":   round(depth_cm / 100.0, 4),
-                "burrow_angle_deg": self._estimate_angle(boundary),
+                "burrow_depth_m":        round(depth_cm / 100.0, 4),
+                "burrow_volume_cm3":     round(volume_mm3 / 1000.0, 3),
+                "burrow_angle_deg":      self._estimate_angle(boundary),
+                "cavity_type":           cavity_type,
                 "ultrasound_confidence": round(conf, 3),
+                "needs_verification":    needs_verification,
             },
         }
         self._pub_burrow.publish(String(data=json.dumps(burrow_msg)))
 
+        snr_str = f"SNR={avg_snr:.1f}dB" if avg_snr is not None else "SNR=N/A"
         self.get_logger().info(
-            f"Burrow: depth={depth_cm:.1f}cm, "
-            f"diam={diam_mm:.0f}mm, conf={conf:.2f}")
+            f"Burrow: depth={depth_cm:.1f}cm, diam={diam_mm:.0f}mm, "
+            f"vol={volume_mm3/1000:.1f}cm³, {snr_str}, "
+            f"type={cavity_type}"
+            + ("  [NEEDS VERIFY]" if needs_verification else ""))
 
         # ── 發布完整 3D Map（前 50 邊界點摘要）──────────────────────────────
         map_msg = {
