@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>阿基米德螺旋探勘船 — 骨架與螺旋棍採購報告</title>
+<style>
+  :root {
+    --blue:   #1a73e8;
+    --teal:   #00897b;
+    --amber:  #f9ab00;
+    --red:    #d93025;
+    --bg:     #f8f9fa;
+    --card:   #ffffff;
+    --border: #dadce0;
+    --text:   #202124;
+    --muted:  #5f6368;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', 'Noto Sans TC', sans-serif; background: var(--bg); color: var(--text); }
+
+  /* ── TOP BAR ── */
+  header {
+    background: linear-gradient(135deg, #0d47a1 0%, #00695c 100%);
+    color: #fff; padding: 28px 40px 22px;
+  }
+  header h1 { font-size: 1.8rem; font-weight: 700; }
+  header p  { margin-top: 6px; opacity: .85; font-size: .95rem; }
+  .badge-row { margin-top: 14px; display: flex; gap: 10px; flex-wrap: wrap; }
+  .badge {
+    background: rgba(255,255,255,.18); border-radius: 20px;
+    padding: 4px 14px; font-size: .82rem; font-weight: 600;
+  }
+
+  /* ── NAV ── */
+  nav {
+    background: var(--card); border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; z-index: 100;
+    display: flex; gap: 0; overflow-x: auto;
+  }
+  nav a {
+    display: block; padding: 14px 22px;
+    text-decoration: none; color: var(--muted);
+    font-size: .88rem; white-space: nowrap;
+    border-bottom: 3px solid transparent;
+    transition: color .2s, border-color .2s;
+  }
+  nav a:hover, nav a.active { color: var(--blue); border-bottom-color: var(--blue); }
+
+  /* ── LAYOUT ── */
+  main { max-width: 1180px; margin: 0 auto; padding: 32px 24px 60px; }
+  section { margin-bottom: 52px; }
+  h2 {
+    font-size: 1.35rem; font-weight: 700; color: var(--blue);
+    border-left: 4px solid var(--blue); padding-left: 12px;
+    margin-bottom: 22px;
+  }
+  h3 { font-size: 1.05rem; font-weight: 600; color: var(--teal); margin: 18px 0 10px; }
+
+  /* ── CARDS ── */
+  .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; }
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 22px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.06);
+  }
+  .card .icon { font-size: 2rem; margin-bottom: 10px; }
+  .card h3   { margin-top: 0; }
+  .card p    { color: var(--muted); font-size: .9rem; line-height: 1.6; }
+  .card .val { font-size: 1.55rem; font-weight: 700; color: var(--blue); margin: 6px 0; }
+
+  /* ── SPEC TABLE ── */
+  .spec-table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+  .spec-table th {
+    background: #e8f0fe; color: var(--blue);
+    padding: 10px 14px; text-align: left;
+    border: 1px solid #c5d8fb;
+  }
+  .spec-table td {
+    padding: 9px 14px; border: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .spec-table tr:nth-child(even) td { background: #fafafa; }
+  .tag {
+    display: inline-block; border-radius: 4px; padding: 2px 8px;
+    font-size: .78rem; font-weight: 600; margin-left: 6px;
+  }
+  .tag-3030 { background: #e8f0fe; color: var(--blue); }
+  .tag-2020 { background: #e6f4ea; color: #137333; }
+  .tag-print { background: #fce8e6; color: var(--red); }
+
+  /* ── BOM TABLE ── */
+  .bom-table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+  .bom-table th {
+    background: #004d40; color: #fff;
+    padding: 10px 12px; text-align: center;
+  }
+  .bom-table td { padding: 8px 12px; border: 1px solid var(--border); text-align: center; }
+  .bom-table tr:nth-child(even) td { background: #f0fdf4; }
+  .bom-table .subtotal td { background: #e8f5e9; font-weight: 700; }
+  .bom-table .total td { background: #004d40; color: #fff; font-weight: 700; }
+  .price-nt { color: var(--teal); font-weight: 700; }
+
+  /* ── SUPPLIER TABLE ── */
+  .sup-table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+  .sup-table th { background: #0d47a1; color: #fff; padding: 10px 12px; }
+  .sup-table td { padding: 8px 12px; border: 1px solid var(--border); }
+  .sup-table tr:nth-child(even) td { background: #f3f4f6; }
+  .sup-link { color: var(--blue); font-size: .8rem; }
+
+  /* ── PRINT STEPS ── */
+  .steps { list-style: none; counter-reset: step; }
+  .steps li {
+    counter-increment: step; position: relative;
+    padding: 12px 16px 12px 56px; margin-bottom: 10px;
+    background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+  }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+    width: 28px; height: 28px; background: var(--teal); color: #fff;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: .9rem;
+  }
+
+  /* ── VIEWER ── */
+  #viewer-wrap {
+    background: #1a1a2e; border-radius: 12px; overflow: hidden;
+    position: relative; height: 420px;
+  }
+  #viewer-canvas { width: 100%; height: 100%; display: block; }
+  #viewer-controls {
+    position: absolute; top: 12px; left: 12px;
+    display: flex; gap: 8px; flex-wrap: wrap;
+  }
+  .vbtn {
+    background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.3);
+    color: #fff; padding: 6px 14px; border-radius: 6px; cursor: pointer;
+    font-size: .82rem; backdrop-filter: blur(4px);
+    transition: background .2s;
+  }
+  .vbtn:hover { background: rgba(255,255,255,.3); }
+  .vbtn.active { background: var(--teal); border-color: var(--teal); }
+  #viewer-status {
+    position: absolute; bottom: 12px; right: 14px;
+    color: rgba(255,255,255,.6); font-size: .78rem;
+  }
+  #viewer-hint {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+    color: rgba(255,255,255,.5); text-align: center; font-size: .9rem;
+    pointer-events: none;
+  }
+
+  /* ── ALERT ── */
+  .alert {
+    padding: 14px 18px; border-radius: 8px; font-size: .9rem;
+    display: flex; gap: 12px; align-items: flex-start;
+    margin-bottom: 16px;
+  }
+  .alert-info  { background: #e8f0fe; border-left: 4px solid var(--blue); }
+  .alert-warn  { background: #fef7e0; border-left: 4px solid var(--amber); }
+  .alert-green { background: #e6f4ea; border-left: 4px solid var(--teal); }
+
+  /* ── PROGRESS ── */
+  .progress-bar-wrap { background: #e0e0e0; border-radius: 6px; height: 10px; margin: 6px 0 12px; }
+  .progress-bar { height: 10px; border-radius: 6px; background: var(--teal); }
+
+  /* ── TIMELINE ── */
+  .timeline { border-left: 3px solid var(--teal); margin-left: 8px; padding-left: 22px; }
+  .timeline-item { margin-bottom: 24px; position: relative; }
+  .timeline-item::before {
+    content: ''; position: absolute; left: -28px; top: 4px;
+    width: 12px; height: 12px; background: var(--teal); border-radius: 50%;
+    border: 2px solid var(--card);
+  }
+  .timeline-item .tl-date { font-size: .8rem; color: var(--muted); margin-bottom: 3px; }
+  .timeline-item .tl-title { font-weight: 700; }
+  .timeline-item .tl-body  { font-size: .88rem; color: var(--muted); margin-top: 4px; line-height: 1.55; }
+
+  /* ── MISC ── */
+  code { background: #f1f3f4; padding: 2px 6px; border-radius: 4px; font-size: .85rem; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 680px) { .two-col { grid-template-columns: 1fr; } }
+  footer {
+    text-align: center; padding: 28px; color: var(--muted); font-size: .8rem;
+    border-top: 1px solid var(--border); margin-top: 40px;
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <h1>阿基米德螺旋探勘船 — 骨架 × 螺旋棍 採購報告</h1>
+  <p>3030/2020 鋁擠型骨架 + 3D 列印阿基米德螺旋棍 完整設計與採購清單</p>
+  <div class="badge-row">
+    <span class="badge">版本 v2.1</span>
+    <span class="badge">2026-03-19</span>
+    <span class="badge">骨架 878×508×320mm</span>
+    <span class="badge">3030 ≈ 10.0m + 2020 ≈ 0.9m</span>
+    <span class="badge">PETG 螺旋 × 32 段</span>
+  </div>
+</header>
+
+<!-- NAV -->
+<nav>
+  <a href="#overview" class="active">總覽</a>
+  <a href="#frame">鋁擠型骨架</a>
+  <a href="#screw">螺旋棍設計</a>
+  <a href="#viewer">3D 預覽</a>
+  <a href="#bom">採購清單 BOM</a>
+  <a href="#supplier">台灣供應商</a>
+  <a href="#assembly">組裝指引</a>
+  <a href="#timeline">時程</a>
+</nav>
+
+<main>
+
+<!-- ══ OVERVIEW ══════════════════════════════════════════ -->
+<section id="overview">
+  <h2>總覽</h2>
+  <div class="card-grid">
+    <div class="card">
+      <div class="icon">🏗️</div>
+      <h3>骨架材料</h3>
+      <div class="val">3030 T-slot</div>
+      <p>3030 鋁擠型主骨架，2020 管上輔助支撐。M5 T-nuts + 角碼連接，免鑽孔快速組裝。</p>
+    </div>
+    <div class="card">
+      <div class="icon">🔩</div>
+      <h3>骨架尺寸</h3>
+      <div class="val">878×508×320mm</div>
+      <p>長 878mm（前端蓋到後馬達），寬 508mm（左右對稱），高 320mm（地面到平台頂）</p>
+    </div>
+    <div class="card">
+      <div class="icon">🌀</div>
+      <h3>螺旋棍</h3>
+      <div class="val">32 段 / 雙管</div>
+      <p>每管 16 段（90°/段），PETG 列印，海洋環氧黏合在 PVC 管外壁。無需支撐材。</p>
+    </div>
+    <div class="card">
+      <div class="icon">💰</div>
+      <h3>骨架材料總費</h3>
+      <div class="val">≈ NT$2,800</div>
+      <p>鋁擠型（12m@3030 + 3m@2020）+ 角碼 × 20 + T-nuts × 80 + 螺絲組。</p>
+    </div>
+    <div class="card">
+      <div class="icon">🖨️</div>
+      <h3>列印耗材</h3>
+      <div class="val">≈ NT$350</div>
+      <p>PETG 線材 ~224g（兩管），以 700g 捲 NT$350 估算。列印時間 ≈ 48h 總計。</p>
+    </div>
+    <div class="card">
+      <div class="icon">📦</div>
+      <h3>骨架完整料件</h3>
+      <div class="val">≈ NT$3,200</div>
+      <p>含骨架、螺旋棍耗材、環氧樹脂、玻纖布，不含馬達與電子控制。</p>
+    </div>
+  </div>
+
+  <div class="alert alert-info" style="margin-top:20px">
+    <span>ℹ️</span>
+    <div>本報告對應 <code>gen_aluminum_frame.py</code>（骨架 STL 生成）及 <code>gen_screw_printable.py</code>（螺旋棍 STL 生成），所有尺寸與 <code>assemble_machine_v2.py</code> 主組裝檔一致。</div>
+  </div>
+</section>
+
+<!-- ══ FRAME ════════════════════════════════════════════ -->
+<section id="frame">
+  <h2>鋁擠型骨架設計</h2>
+
+  <div class="two-col">
+    <div>
+      <h3>座標系定義</h3>
+      <table class="spec-table">
+        <tr><th>軸</th><th>方向</th><th>關鍵數值</th></tr>
+        <tr><td>X</td><td>垂直（正=上）</td><td>地面 X=−164mm，平台頂 X=+156mm</td></tr>
+        <tr><td>Y</td><td>側向</td><td>管A Y=0，管B Y=300mm，寬度 508mm</td></tr>
+        <tr><td>Z</td><td>縱向（前→後）</td><td>前端 Z=−214mm，後端 Z=+664mm</td></tr>
+      </table>
+
+      <h3>高度計算邏輯</h3>
+      <table class="spec-table">
+        <tr><th>參數</th><th>數值</th><th>說明</th></tr>
+        <tr><td>BLADE_R</td><td>134 mm</td><td>葉片外徑半徑</td></tr>
+        <tr><td>BLADE_CLEARANCE</td><td>30 mm</td><td>葉片離地安全間距</td></tr>
+        <tr><td>GROUND_X</td><td>−164 mm</td><td>=−(134+30)，地面高度</td></tr>
+        <tr><td>PIPE_R</td><td>84 mm</td><td>PVC 管外徑半徑</td></tr>
+        <tr><td>PLAT_X_TOP</td><td>+156 mm</td><td>=84+72，平台頂面高度</td></tr>
+        <tr><td>整機高度 H</td><td>320 mm</td><td>=156−(−164)</td></tr>
+      </table>
+    </div>
+    <div>
+      <h3>骨架零件清單</h3>
+      <table class="spec-table">
+        <tr><th>代號</th><th>名稱</th><th>型材</th><th>數量</th><th>單長</th></tr>
+        <tr><td>A1</td><td>底層縱梁</td><td><span class="tag tag-3030">3030</span></td><td>×2</td><td>878mm</td></tr>
+        <tr><td>A2</td><td>底層橫梁</td><td><span class="tag tag-3030">3030</span></td><td>×3</td><td>508mm</td></tr>
+        <tr><td>A3</td><td>四角立柱</td><td><span class="tag tag-3030">3030</span></td><td>×4</td><td>320mm</td></tr>
+        <tr><td>A4</td><td>馬達端橫梁</td><td><span class="tag tag-3030">3030</span></td><td>×2</td><td>508mm</td></tr>
+        <tr><td>A5</td><td>馬達端立柱</td><td><span class="tag tag-3030">3030</span></td><td>×4</td><td>164mm</td></tr>
+        <tr><td>A6</td><td>平台縱梁</td><td><span class="tag tag-3030">3030</span></td><td>×2</td><td>878mm</td></tr>
+        <tr><td>A7</td><td>平台橫梁</td><td><span class="tag tag-3030">3030</span></td><td>×4</td><td>508mm</td></tr>
+        <tr><td>B1</td><td>管上支撐</td><td><span class="tag tag-2020">2020</span></td><td>×4</td><td>225mm</td></tr>
+      </table>
+      <div style="margin-top:12px; background:#e8f0fe; padding:10px 14px; border-radius:8px; font-size:.9rem">
+        <strong>3030 合計：10,020mm ≈ 10.0m</strong>（建議買 4m × 3 根 = 12m）<br>
+        <strong>2020 合計：900mm ≈ 0.9m</strong>（建議買 3m × 1 根）
+      </div>
+    </div>
+  </div>
+
+  <h3>連接件清單</h3>
+  <table class="spec-table" style="margin-top:8px">
+    <tr><th>件號</th><th>名稱</th><th>規格</th><th>數量</th><th>用途</th></tr>
+    <tr><td>C1</td><td>90° 角碼（L 型）</td><td>3030 用，2槽</td><td>20 個</td><td>梁柱垂直連接</td></tr>
+    <tr><td>C2</td><td>T-slot 螺母</td><td>M5 × 3030 槽</td><td>80 個</td><td>各節點滑入固定</td></tr>
+    <tr><td>C3</td><td>內六角螺絲</td><td>M5 × 10mm 不鏽鋼</td><td>80 個</td><td>角碼鎖固</td></tr>
+    <tr><td>C4</td><td>防滑橡膠腳墊</td><td>30×30mm，高 8mm</td><td>6 個</td><td>底面防滑保護</td></tr>
+    <tr><td>C5</td><td>鋁角碼（加強型）</td><td>40mm × 40mm，3030</td><td>8 個</td><td>立柱底部加強</td></tr>
+    <tr><td>C6</td><td>馬達固定板</td><td>3mm 鋁板，86×86mm</td><td>4 片</td><td>NEMA23 掛載</td></tr>
+  </table>
+
+  <div class="alert alert-warn" style="margin-top:16px">
+    <span>⚠️</span>
+    <div>組裝前確認型材截切面垂直度（誤差 &lt;0.5mm），否則骨架會有扭轉應力。建議向供應商要求機器截切，勿手鋸。</div>
+  </div>
+</section>
+
+<!-- ══ SCREW ════════════════════════════════════════════ -->
+<section id="screw">
+  <h2>3D 列印螺旋棍設計</h2>
+
+  <div class="card-grid" style="margin-bottom:20px">
+    <div class="card">
+      <h3>幾何參數</h3>
+      <table class="spec-table">
+        <tr><th>參數</th><th>值</th></tr>
+        <tr><td>PVC 管外徑</td><td>168mm（R=84mm）</td></tr>
+        <tr><td>葉片外徑</td><td>268mm（R=134mm）</td></tr>
+        <tr><td>螺距</td><td>112.5mm / 圈</td></tr>
+        <tr><td>圈數</td><td>4 圈</td></tr>
+        <tr><td>管長</td><td>450mm</td></tr>
+        <tr><td>葉片厚度</td><td>8mm（徑向）</td></tr>
+        <tr><td>葉片軸向寬</td><td>15mm</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <h3>分段策略</h3>
+      <p style="margin-bottom:10px">每管分為 <strong>16 段</strong>，每段 <strong>90°弧</strong>：</p>
+      <ul style="list-style:none; font-size:.9rem; color:var(--muted)">
+        <li>✅ 每段可平放列印，<strong>無需支撐</strong></li>
+        <li>✅ 印壞只需補印壞的那一段</li>
+        <li>✅ 可分批列印，邊印邊裝</li>
+        <li>✅ 旋向：管A 右旋（R），管B 左旋（L）</li>
+        <li>⚠️ 需要準確角度對齊，建議做刻度環定位</li>
+      </ul>
+      <div style="margin-top:12px; background:#fce8e6; border-radius:6px; padding:8px 12px; font-size:.85rem">
+        <strong>兩管共 32 段</strong>，耗材合計 ≈ 224g
+      </div>
+    </div>
+    <div class="card">
+      <h3>列印設定（Bambu/Prusa）</h3>
+      <table class="spec-table">
+        <tr><th>參數</th><th>建議值</th></tr>
+        <tr><td>材質</td><td>PETG 或 ASA</td></tr>
+        <tr><td>層高</td><td>0.2mm</td></tr>
+        <tr><td>噴嘴</td><td>0.4mm</td></tr>
+        <tr><td>壁厚</td><td>4 層（1.6mm）</td></tr>
+        <tr><td>填充率</td><td>40%（六角形）</td></tr>
+        <tr><td>支撐</td><td>不需要</td></tr>
+        <tr><td>溫度（PETG）</td><td>240°C / 床 70°C</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <h3>螺旋棍固定方式（Marine Epoxy 法）</h3>
+  <ol class="steps">
+    <li><strong>表面處理</strong>：80 號砂紙打磨 PVC 管外壁 → 丙酮擦拭去油脂，待乾 5 分鐘</li>
+    <li><strong>刻度標記</strong>：每 28.125mm（= 螺距/4）在 PVC 管上畫圓周定位線，確保螺距精確</li>
+    <li><strong>調配環氧</strong>：混合 Marine Epoxy（1:1），使用期約 20 分鐘</li>
+    <li><strong>刷塗上膠</strong>：在 PVC 管接觸面薄塗一層，並在螺旋段內弧面也塗一層</li>
+    <li><strong>對準定位</strong>：對準刻度線，從前端依序套上各段，用夾具夾緊 24h</li>
+    <li><strong>玻纖補強</strong>：50g/m² 玻纖布裁成 20mm 條，以環氧纏繞接縫，再乾 24h</li>
+    <li><strong>水中測試</strong>：泡水 30 分鐘確認無浮色，試轉確認平衡</li>
+  </ol>
+
+  <div class="alert alert-green" style="margin-top:16px">
+    <span>💡</span>
+    <div><strong>UHMW-PE 替代方案</strong>：若 3D 列印強度不足，葉片可改用 UHMW-PE 板材 CNC 切割。耐磨性優於 PVC，UV 穩定，但需找代工，估費 NT$3,000−5,000 / 管。</div>
+  </div>
+</section>
+
+<!-- ══ VIEWER ════════════════════════════════════════════ -->
+<section id="viewer">
+  <h2>3D 模型預覽</h2>
+  <div class="alert alert-info" style="margin-bottom:14px">
+    <span>ℹ️</span>
+    <div>需要先執行 <code>python mechanics/gen_aluminum_frame.py</code> 與 <code>python mechanics/gen_screw_printable.py</code> 生成 STL 檔案後，才能在此預覽。</div>
+  </div>
+
+  <div style="margin-bottom: 12px; display:flex; gap:10px; flex-wrap:wrap; align-items:center">
+    <label style="font-size:.9rem; font-weight:600">選擇模型：</label>
+    <select id="model-select" style="padding:7px 12px; border-radius:6px; border:1px solid var(--border); font-size:.88rem">
+      <option value="../mechanics/stl/frame_ASSEMBLY.stl">骨架完整組裝</option>
+      <option value="../mechanics/stl/frame_bottom_rails.stl">底層縱梁 ×2</option>
+      <option value="../mechanics/stl/frame_vertical_posts.stl">四角立柱 ×4</option>
+      <option value="../mechanics/stl/frame_platform_rails.stl">平台縱梁 ×2</option>
+      <option value="../mechanics/stl/frame_motor_end.stl">馬達端結構</option>
+      <option value="../mechanics/stl/screw_assembly_A.stl">螺旋棍 管A</option>
+      <option value="../mechanics/stl/screw_assembly_B.stl">螺旋棍 管B</option>
+      <option value="../mechanics/stl/screw_FULL.stl">螺旋棍完整（雙管）</option>
+    </select>
+    <button class="vbtn" id="load-btn">載入模型</button>
+  </div>
+
+  <div id="viewer-wrap">
+    <canvas id="viewer-canvas"></canvas>
+    <div id="viewer-controls">
+      <button class="vbtn active" id="btn-rotate">自動旋轉</button>
+      <button class="vbtn" id="btn-wireframe">線框</button>
+      <button class="vbtn" id="btn-reset">重置視角</button>
+    </div>
+    <div id="viewer-hint">
+      請選擇模型後按「載入模型」<br>
+      <small>（需要 STL 檔案存在於 mechanics/stl/ 目錄）</small>
+    </div>
+    <div id="viewer-status"></div>
+  </div>
+  <p style="color:var(--muted); font-size:.82rem; margin-top:8px">拖曳旋轉 · 滾輪縮放 · 右鍵平移</p>
+</section>
+
+<!-- ══ BOM ═══════════════════════════════════════════════ -->
+<section id="bom">
+  <h2>採購清單 BOM（完整）</h2>
+
+  <h3>鋁擠型材料</h3>
+  <table class="bom-table">
+    <thead>
+      <tr><th>代號</th><th>品項</th><th>規格</th><th>數量</th><th>單長 mm</th><th>小計 mm</th><th>估價 NT$</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>A1</td><td>底層縱梁</td><td>3030 T-slot</td><td>2</td><td>878</td><td>1,756</td><td>—</td></tr>
+      <tr><td>A2</td><td>底層橫梁</td><td>3030 T-slot</td><td>3</td><td>508</td><td>1,524</td><td>—</td></tr>
+      <tr><td>A3</td><td>四角立柱</td><td>3030 T-slot</td><td>4</td><td>320</td><td>1,280</td><td>—</td></tr>
+      <tr><td>A4</td><td>馬達端橫梁</td><td>3030 T-slot</td><td>2</td><td>508</td><td>1,016</td><td>—</td></tr>
+      <tr><td>A5</td><td>馬達端立柱</td><td>3030 T-slot</td><td>4</td><td>164</td><td>656</td><td>—</td></tr>
+      <tr><td>A6</td><td>平台縱梁</td><td>3030 T-slot</td><td>2</td><td>878</td><td>1,756</td><td>—</td></tr>
+      <tr><td>A7</td><td>平台橫梁</td><td>3030 T-slot</td><td>4</td><td>508</td><td>2,032</td><td>—</td></tr>
+      <tr class="subtotal"><td colspan="5">3030 合計</td><td>10,020 mm</td><td class="price-nt">≈ NT$1,200</td></tr>
+      <tr><td>B1</td><td>管上支撐</td><td>2020 T-slot</td><td>4</td><td>225</td><td>900</td><td>—</td></tr>
+      <tr class="subtotal"><td colspan="5">2020 合計</td><td>900 mm</td><td class="price-nt">≈ NT$150</td></tr>
+    </tbody>
+  </table>
+
+  <h3 style="margin-top:22px">連接件與五金</h3>
+  <table class="bom-table">
+    <thead>
+      <tr><th>代號</th><th>品項</th><th>規格</th><th>數量</th><th>單價 NT$</th><th>小計 NT$</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>C1</td><td>90° 角碼</td><td>3030 用，2槽開口</td><td>20</td><td>25</td><td class="price-nt">500</td></tr>
+      <tr><td>C2</td><td>T-slot 螺母 M5</td><td>3030 槽，滑入式</td><td>80</td><td>5</td><td class="price-nt">400</td></tr>
+      <tr><td>C3</td><td>內六角螺絲 M5×10</td><td>不鏽鋼 SUS304</td><td>80</td><td>3</td><td class="price-nt">240</td></tr>
+      <tr><td>C4</td><td>橡膠防滑腳墊</td><td>30×30mm，h=8mm</td><td>6</td><td>20</td><td class="price-nt">120</td></tr>
+      <tr><td>C5</td><td>加強角碼</td><td>40×40mm 鋁製</td><td>8</td><td>35</td><td class="price-nt">280</td></tr>
+      <tr><td>C6</td><td>馬達固定板</td><td>3mm 鋁板 86×86mm</td><td>4</td><td>80</td><td class="price-nt">320</td></tr>
+      <tr class="subtotal"><td colspan="5">五金小計</td><td class="price-nt">NT$1,860</td></tr>
+    </tbody>
+  </table>
+
+  <h3 style="margin-top:22px">螺旋棍材料</h3>
+  <table class="bom-table">
+    <thead>
+      <tr><th>代號</th><th>品項</th><th>規格</th><th>數量</th><th>單價 NT$</th><th>小計 NT$</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>S1</td><td>PETG 線材</td><td>1.75mm，透明/白色 1kg</td><td>1 捲</td><td>500</td><td class="price-nt">500</td></tr>
+      <tr><td>S2</td><td>Marine Epoxy</td><td>250mL 套裝，耐水</td><td>1 套</td><td>450</td><td class="price-nt">450</td></tr>
+      <tr><td>S3</td><td>玻纖布</td><td>50g/m²，寬 20cm × 2m</td><td>1 捲</td><td>180</td><td class="price-nt">180</td></tr>
+      <tr><td>S4</td><td>丙酮脫脂劑</td><td>500mL</td><td>1 瓶</td><td>80</td><td class="price-nt">80</td></tr>
+      <tr><td>S5</td><td>砂紙</td><td>80/120/240 號各2張</td><td>1 組</td><td>60</td><td class="price-nt">60</td></tr>
+      <tr class="subtotal"><td colspan="5">螺旋棍材料小計</td><td class="price-nt">NT$1,270</td></tr>
+    </tbody>
+  </table>
+
+  <div style="margin-top:18px; background:#004d40; color:#fff; border-radius:10px; padding:16px 22px; font-size:1.05rem">
+    <strong>骨架 + 螺旋棍 材料總計：NT$4,480</strong>
+    <span style="font-size:.85rem; opacity:.8; margin-left:12px">（不含馬達、電子、PVC 管、感測器）</span>
+  </div>
+</section>
+
+<!-- ══ SUPPLIER ══════════════════════════════════════════ -->
+<section id="supplier">
+  <h2>台灣供應商參考</h2>
+
+  <h3>鋁擠型材（3030 / 2020）</h3>
+  <table class="sup-table">
+    <thead><tr><th>供應商</th><th>型材規格</th><th>參考價格</th><th>特色</th><th>聯絡</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>鋁合金型材工廠</strong><br><small>（屏東／台中）</small></td>
+        <td>3030 / 2020 T-slot</td>
+        <td>3030：NT$120/m<br>2020：NT$80/m</td>
+        <td>可訂製裁切，提供機器截切，精度±0.2mm</td>
+        <td>Yahoo 購物搜尋「3030鋁擠型」</td>
+      </tr>
+      <tr>
+        <td><strong>蝦皮批發商</strong><br><small>（多家競爭）</small></td>
+        <td>3030 / 2020 各長度</td>
+        <td>3030 4m：NT$420<br>2020 3m：NT$220</td>
+        <td>到府宅配，門檻低，適合少量</td>
+        <td>蝦皮搜尋「鋁擠型 3030」</td>
+      </tr>
+      <tr>
+        <td><strong>OpenBuilds 台灣代理</strong></td>
+        <td>V-slot 2040/3030</td>
+        <td>3030 2m：NT$380</td>
+        <td>V-slot 兼容，可配輪組</td>
+        <td>OpenBuilds Taiwan 官網</td>
+      </tr>
+      <tr>
+        <td><strong>俱全五金（台中）</strong></td>
+        <td>工業用鋁型材，多規格</td>
+        <td>詢價</td>
+        <td>量大可議價，含裁切服務</td>
+        <td>台中工業區，需電話詢價</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3 style="margin-top:20px">連接件供應商</h3>
+  <table class="sup-table">
+    <thead><tr><th>品項</th><th>供應商</th><th>參考價</th></tr></thead>
+    <tbody>
+      <tr><td>T-slot 螺母 M5 × 80個</td><td>露天/蝦皮「T型螺母 M5 3030」</td><td>NT$200−350</td></tr>
+      <tr><td>90° 角碼 × 20個</td><td>露天搜尋「鋁擠型角碼 3030」</td><td>NT$400−600</td></tr>
+      <tr><td>SUS304 螺絲組 M5×10 × 100套</td><td>誠峰五金、露天五金行</td><td>NT$150−250</td></tr>
+      <tr><td>Marine Epoxy 250mL</td><td>法國貝爾（Bell）、3M DP420</td><td>NT$400−700</td></tr>
+      <tr><td>PETG 線材 1kg</td><td>Bambu、Polymaker、台灣本土品牌</td><td>NT$450−650</td></tr>
+    </tbody>
+  </table>
+
+  <div class="alert alert-warn" style="margin-top:16px">
+    <span>💡</span>
+    <div>建議同一批採購時詢問能否一次下單「切斷服務」，標示各段長度（878mm × 4、508mm × 13、320mm × 4、164mm × 4），台中工業區廠商通常可配合，裁切費約 NT$200。</div>
+  </div>
+</section>
+
+<!-- ══ ASSEMBLY ══════════════════════════════════════════ -->
+<section id="assembly">
+  <h2>組裝指引</h2>
+
+  <div class="two-col">
+    <div>
+      <h3>骨架組裝順序</h3>
+      <ol class="steps">
+        <li><strong>底框</strong>：先組底層縱梁（A1×2）+ 底層橫梁（A2×3），確認矩形水平</li>
+        <li><strong>立柱</strong>：安裝四角立柱（A3×4），用大角碼（C5）固定底部，確認垂直（量對角線）</li>
+        <li><strong>馬達端</strong>：安裝馬達端橫梁（A4×2）+ 馬達端立柱（A5×4），此框架支撐 NEMA23</li>
+        <li><strong>平台框</strong>：安裝平台縱梁（A6×2）+ 平台橫梁（A7×4），鎖固後平台成形</li>
+        <li><strong>管上支撐</strong>：安裝 2020 管上支撐（B1×4），位於管正上方輔助固定</li>
+        <li><strong>馬達板</strong>：安裝 3mm 鋁板（C6×4）至馬達端橫梁，鎖 NEMA23 孔位</li>
+        <li><strong>全緊固</strong>：從對角依序最終鎖緊所有角碼螺絲，力矩 2.5 N·m</li>
+      </ol>
+    </div>
+    <div>
+      <h3>工具需求</h3>
+      <table class="spec-table">
+        <tr><th>工具</th><th>規格</th><th>用途</th></tr>
+        <tr><td>六角扳手組</td><td>M5（4mm 六角）</td><td>角碼螺絲鎖固</td></tr>
+        <tr><td>捲尺</td><td>3m 以上</td><td>確認對角線尺寸</td></tr>
+        <tr><td>水平尺</td><td>600mm 以上</td><td>確認底框水平</td></tr>
+        <tr><td>直角尺</td><td>200mm</td><td>確認柱子垂直</td></tr>
+        <tr><td>鋁鋸/截切機</td><td>—</td><td>若需現場微調裁切</td></tr>
+      </table>
+
+      <h3 style="margin-top:16px">關鍵公差</h3>
+      <div class="alert alert-green">
+        <span>✅</span>
+        <div>
+          底框對角線差 &lt; 1mm<br>
+          立柱垂直度 &lt; 0.5mm / 300mm<br>
+          管安裝孔位誤差 &lt; ±0.5mm
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ TIMELINE ══════════════════════════════════════════ -->
+<section id="timeline">
+  <h2>採購 × 製作時程</h2>
+
+  <div class="two-col">
+    <div>
+      <div class="timeline">
+        <div class="timeline-item">
+          <div class="tl-date">Week 1（採購週）</div>
+          <div class="tl-title">下單鋁擠型材</div>
+          <div class="tl-body">聯絡廠商確認截切尺寸，下單 3030（12m）+ 2020（3m）+ 角碼套件。宅配 3−5 工作天。</div>
+        </div>
+        <div class="timeline-item">
+          <div class="tl-date">Week 1〜2（列印週）</div>
+          <div class="tl-title">啟動螺旋棍列印</div>
+          <div class="tl-body">每管 16 段，每段約 1.5h，每天可印 5〜6 段。管A 約 3 天，管B 約 3 天（可並行）。</div>
+        </div>
+        <div class="timeline-item">
+          <div class="tl-date">Week 2（到貨後）</div>
+          <div class="tl-title">骨架組裝</div>
+          <div class="tl-body">型材到貨後，依序組底框→立柱→平台，半天可完成骨架主體組裝。</div>
+        </div>
+        <div class="timeline-item">
+          <div class="tl-date">Week 3</div>
+          <div class="tl-title">螺旋棍黏合</div>
+          <div class="tl-body">Marine Epoxy 黏合（24h 固化），玻纖補強（再 24h），共 2 天硬化。</div>
+        </div>
+        <div class="timeline-item">
+          <div class="tl-date">Week 3〜4</div>
+          <div class="tl-title">馬達安裝 + 整機測試</div>
+          <div class="tl-body">安裝 NEMA23 × 2、控制板、感測器。完成水槽動態測試（螺旋旋轉、機身浮力確認）。</div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <h3>完成度追蹤</h3>
+
+      <div style="font-size:.9rem">
+        <div style="display:flex; justify-content:space-between"><span>CAD 設計（骨架 STL）</span><span>100%</span></div>
+        <div class="progress-bar-wrap"><div class="progress-bar" style="width:100%"></div></div>
+
+        <div style="display:flex; justify-content:space-between"><span>CAD 設計（螺旋棍 STL）</span><span>100%</span></div>
+        <div class="progress-bar-wrap"><div class="progress-bar" style="width:100%"></div></div>
+
+        <div style="display:flex; justify-content:space-between"><span>採購清單 BOM</span><span>100%</span></div>
+        <div class="progress-bar-wrap"><div class="progress-bar" style="width:100%"></div></div>
+
+        <div style="display:flex; justify-content:space-between"><span>實體採購下單</span><span>0%</span></div>
+        <div class="progress-bar-wrap"><div class="progress-bar" style="width:0%"></div></div>
+
+        <div style="display:flex; justify-content:space-between"><span>螺旋棍列印</span><span>0%</span></div>
+        <div class="progress-bar-wrap"><div class="progress-bar" style="width:0%"></div></div>
+
+        <div style="display:flex; justify-content:space-between"><span>骨架實體組裝</span><span>0%</span></div>
+        <div class="progress-bar-wrap"><div class="progress-bar" style="width:0%"></div></div>
+
+        <div style="display:flex; justify-content:space-between"><span>ROS2 控制整合</span><span>70%</span></div>
+        <div class="progress-bar-wrap"><div class="progress-bar" style="width:70%"></div></div>
+
+        <div style="display:flex; justify-content:space-between"><span>田野測試</span><span>0%</span></div>
+        <div class="progress-bar-wrap"><div class="progress-bar" style="width:0%"></div></div>
+      </div>
+
+      <div class="alert alert-info" style="margin-top:16px">
+        <span>🎯</span>
+        <div><strong>目標：2026 年 5 月田野部署</strong><br>
+        王功 G3 / 漢寶 L5 / J4 潮間帶探勘試驗</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  阿基米德螺旋探勘船 &nbsp;|&nbsp; 骨架採購報告 v2.1 &nbsp;|&nbsp; 2026-03-19<br>
+  生成工具：gen_aluminum_frame.py + gen_screw_printable.py
+</footer>
+
+<!-- ══ Three.js STL VIEWER ══════════════════════════════ -->
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { STLLoader } from 'three/addons/loaders/STLLoader.js';
+
+const canvas    = document.getElementById('viewer-canvas');
+const wrap      = document.getElementById('viewer-wrap');
+const statusEl  = document.getElementById('viewer-status');
+const hintEl    = document.getElementById('viewer-hint');
+
+const renderer  = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+renderer.setPixelRatio(window.devicePixelRatio);
+renderer.shadowMap.enabled = true;
+
+const camera = new THREE.PerspectiveCamera(45, 1, 1, 10000);
+camera.position.set(600, 400, 900);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x1a1a2e);
+scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
+dirLight.position.set(500, 800, 600);
+scene.add(dirLight);
+scene.add(new THREE.GridHelper(1400, 28, 0x333366, 0x222244));
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.07;
+
+let autoRotate = true;
+let wireframe  = false;
+let mesh       = null;
+
+function resize() {
+  const w = wrap.clientWidth, h = wrap.clientHeight;
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+}
+resize();
+new ResizeObserver(resize).observe(wrap);
+
+function animate() {
+  requestAnimationFrame(animate);
+  if (autoRotate && mesh) mesh.rotation.y += 0.003;
+  controls.update();
+  renderer.render(scene, camera);
+}
+animate();
+
+function loadSTL(url) {
+  statusEl.textContent = '載入中...';
+  hintEl.style.display = 'none';
+  if (mesh) { scene.remove(mesh); mesh.geometry.dispose(); mesh = null; }
+
+  new STLLoader().load(url, (geo) => {
+    geo.computeBoundingBox();
+    const box  = geo.boundingBox;
+    const cx   = (box.max.x + box.min.x) / 2;
+    const cy   = (box.max.y + box.min.y) / 2;
+    const cz   = (box.max.z + box.min.z) / 2;
+    const size = box.max.distanceTo(box.min);
+    geo.translate(-cx, -cy, -cz);
+    camera.position.set(size * 0.8, size * 0.5, size * 0.8);
+    controls.reset();
+
+    const mat = new THREE.MeshPhongMaterial({
+      color: 0x4db6ac, specular: 0x888888, shininess: 60,
+      wireframe: wireframe, side: THREE.DoubleSide
+    });
+    mesh = new THREE.Mesh(geo, mat);
+    scene.add(mesh);
+    statusEl.textContent = `三角面：${(geo.index ? geo.index.count / 3 : geo.attributes.position.count / 3).toFixed(0)}`;
+  }, (p) => {
+    if (p.total) statusEl.textContent = `${Math.round(p.loaded / p.total * 100)}%`;
+  }, (err) => {
+    statusEl.textContent = '無法載入（STL 檔案未生成或跨域限制）';
+    hintEl.style.display = 'block';
+    hintEl.innerHTML = 'STL 載入失敗<br><small>請先執行 gen_aluminum_frame.py / gen_screw_printable.py<br>或使用本機 HTTP Server 開啟此頁面</small>';
+  });
+}
+
+document.getElementById('load-btn').onclick = () => {
+  loadSTL(document.getElementById('model-select').value);
+};
+
+document.getElementById('btn-rotate').onclick = function() {
+  autoRotate = !autoRotate;
+  this.classList.toggle('active', autoRotate);
+};
+
+document.getElementById('btn-wireframe').onclick = function() {
+  wireframe = !wireframe;
+  this.classList.toggle('active', wireframe);
+  if (mesh) mesh.material.wireframe = wireframe;
+};
+
+document.getElementById('btn-reset').onclick = () => {
+  controls.reset();
+};
+
+// Nav highlight
+const sections = document.querySelectorAll('section');
+const navLinks  = document.querySelectorAll('nav a');
+window.addEventListener('scroll', () => {
+  let cur = '';
+  sections.forEach(s => { if (window.scrollY >= s.offsetTop - 100) cur = s.id; });
+  navLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + cur));
+}, { passive: true });
+</script>
+</body>
+</html>
