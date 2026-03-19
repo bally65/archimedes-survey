@@ -1,0 +1,1234 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>阿基米德 Archimedes — 彰化潮間帶蝦猴棲地調查機器人</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/"}}</script>
+<style>
+:root{
+  --navy:#0a1628;--teal:#00b4d8;--teal2:#0077b6;--accent:#f72585;
+  --green:#06d6a0;--yellow:#ffd166;--orange:#ef8c3e;
+  --bg:#0d1b2e;--card:#132238;--card2:#1a2f4a;--border:#1e3a5f;
+  --text:#e0eaff;--muted:#7a9cc0;--white:#ffffff;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;font-size:15px;line-height:1.7}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;width:220px;height:100vh;background:var(--navy);border-right:1px solid var(--border);overflow-y:auto;z-index:1000;padding:20px 0}
+nav .logo{padding:16px 20px 24px;border-bottom:1px solid var(--border)}
+nav .logo h1{font-size:18px;font-weight:700;color:var(--teal);letter-spacing:.5px}
+nav .logo p{font-size:11px;color:var(--muted);margin-top:4px}
+nav ul{list-style:none;padding:12px 0}
+nav ul li a{display:block;padding:9px 20px;color:var(--muted);text-decoration:none;font-size:13px;transition:.2s;border-left:3px solid transparent}
+nav ul li a:hover,nav ul li a.active{color:var(--teal);border-left-color:var(--teal);background:rgba(0,180,216,.07)}
+nav ul li .section-head{padding:14px 20px 6px;font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);opacity:.6}
+
+/* MAIN */
+main{margin-left:220px;min-height:100vh}
+
+/* HERO */
+.hero{background:linear-gradient(135deg,#050e1e 0%,#0a1f3c 50%,#0d2b4a 100%);padding:80px 60px 60px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 70% 50%,rgba(0,180,216,.12) 0%,transparent 60%)}
+.hero-badge{display:inline-block;background:rgba(0,180,216,.15);border:1px solid var(--teal);color:var(--teal);padding:5px 14px;border-radius:20px;font-size:12px;letter-spacing:1px;text-transform:uppercase;margin-bottom:20px}
+.hero h1{font-size:48px;font-weight:800;line-height:1.1;margin-bottom:8px}
+.hero h1 span{color:var(--teal)}
+.hero .subtitle{font-size:18px;color:var(--muted);margin-bottom:32px;max-width:600px}
+.stats-bar{display:flex;flex-wrap:wrap;gap:20px;margin-top:40px}
+.stat{background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:12px;padding:16px 22px;min-width:140px}
+.stat .val{font-size:28px;font-weight:700;color:var(--teal);line-height:1}
+.stat .lbl{font-size:12px;color:var(--muted);margin-top:4px}
+
+/* SECTIONS */
+section{padding:60px;border-bottom:1px solid var(--border)}
+section:nth-child(even){background:rgba(255,255,255,.015)}
+h2{font-size:28px;font-weight:700;margin-bottom:8px;color:var(--white)}
+h2 span{color:var(--teal)}
+.section-intro{color:var(--muted);font-size:15px;margin-bottom:36px;max-width:700px}
+h3{font-size:18px;font-weight:600;color:var(--teal);margin:28px 0 12px}
+h4{font-size:15px;font-weight:600;color:var(--yellow);margin:18px 0 8px}
+
+/* CARDS */
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px;margin-top:20px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px}
+.card .icon{font-size:32px;margin-bottom:12px}
+.card h4{color:var(--white);margin-top:0}
+.card p{color:var(--muted);font-size:14px;line-height:1.6}
+.card.highlight{border-color:var(--teal);background:rgba(0,180,216,.05)}
+.card.warn{border-color:var(--orange);background:rgba(239,140,62,.05)}
+.card.danger{border-color:var(--accent);background:rgba(247,37,133,.05)}
+.card.success{border-color:var(--green);background:rgba(6,214,160,.05)}
+
+/* TABLE */
+.tbl-wrap{overflow-x:auto;margin-top:16px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{background:var(--card2);color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.8px;padding:12px 16px;text-align:left;border-bottom:1px solid var(--border)}
+td{padding:11px 16px;border-bottom:1px solid rgba(255,255,255,.04);color:var(--text)}
+tr:hover td{background:rgba(0,180,216,.04)}
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600}
+.badge-blue{background:rgba(33,150,243,.2);color:#64b5f6}
+.badge-green{background:rgba(6,214,160,.2);color:var(--green)}
+.badge-orange{background:rgba(255,152,0,.2);color:#ffb74d}
+.badge-red{background:rgba(244,67,54,.2);color:#ef9a9a}
+.badge-purple{background:rgba(156,39,176,.2);color:#ce93d8}
+
+/* MAP */
+#survey-map{height:520px;border-radius:14px;border:1px solid var(--border);margin-top:20px}
+.map-legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:16px}
+.legend-item{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
+.legend-dot{width:14px;height:14px;border-radius:3px}
+
+/* PIPELINE */
+.pipeline{display:flex;align-items:center;flex-wrap:wrap;gap:0;margin:20px 0}
+.pipe-step{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 18px;font-size:13px;white-space:nowrap;position:relative}
+.pipe-step .sub{font-size:11px;color:var(--muted);margin-top:2px}
+.pipe-arrow{color:var(--teal);font-size:20px;padding:0 8px;flex-shrink:0}
+
+/* PROGRESS */
+.progress-list{margin-top:16px}
+.progress-item{display:flex;align-items:flex-start;gap:14px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.progress-item:last-child{border-bottom:none}
+.progress-icon{font-size:18px;flex-shrink:0;margin-top:1px}
+.progress-item .pi-title{font-size:14px;font-weight:600;color:var(--text)}
+.progress-item .pi-desc{font-size:13px;color:var(--muted);margin-top:2px}
+
+/* SPEC TABLE */
+.spec-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:20px}
+.spec-block{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px}
+.spec-block h4{color:var(--teal);margin:0 0 12px}
+.spec-row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:13px}
+.spec-row:last-child{border-bottom:none}
+.spec-row .sk{color:var(--muted)}
+.spec-row .sv{color:var(--text);font-weight:500;text-align:right}
+
+/* CHART */
+.chart-wrap{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:24px;margin-top:20px}
+.chart-wrap canvas{max-height:300px}
+
+/* ALERT */
+.alert{border-radius:10px;padding:16px 20px;margin:16px 0;font-size:14px;display:flex;gap:12px;align-items:flex-start}
+.alert.info{background:rgba(0,180,216,.1);border:1px solid rgba(0,180,216,.3);color:#90e0ef}
+.alert.warn{background:rgba(255,152,0,.1);border:1px solid rgba(255,152,0,.3);color:#ffcc80}
+.alert.danger{background:rgba(247,37,133,.1);border:1px solid rgba(247,37,133,.3);color:#f48fb1}
+.alert.success{background:rgba(6,214,160,.1);border:1px solid rgba(6,214,160,.3);color:#80cbc4}
+.alert .ai{font-size:20px;flex-shrink:0}
+
+/* CODE */
+code{background:rgba(0,0,0,.4);border:1px solid var(--border);border-radius:6px;padding:2px 8px;font-family:'Courier New',monospace;font-size:13px;color:#90caf9}
+pre{background:#050d1a;border:1px solid var(--border);border-radius:10px;padding:20px;overflow-x:auto;margin:16px 0}
+pre code{background:none;border:none;padding:0;font-size:13px;color:#a8d8ff}
+
+/* FLEET */
+.fleet-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin-top:20px}
+.fleet-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center}
+.fleet-card .fn{font-size:24px;font-weight:800;color:var(--teal)}
+.fleet-card .ft{font-size:13px;color:var(--muted);margin-top:4px}
+
+/* HOSTING */
+.host-option{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:22px;margin:12px 0}
+.host-option h4{color:var(--white);margin:0 0 8px;display:flex;align-items:center;gap:10px}
+.host-tag{font-size:11px;padding:2px 8px;border-radius:10px;background:rgba(6,214,160,.2);color:var(--green)}
+.host-tag.beta{background:rgba(0,180,216,.2);color:var(--teal)}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:var(--navy)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+/* RESPONSIVE */
+@media(max-width:900px){
+  nav{display:none}
+  main{margin-left:0}
+  section{padding:40px 24px}
+  .hero{padding:50px 24px 40px}
+  .hero h1{font-size:32px}
+  .spec-grid{grid-template-columns:1fr}
+  .fleet-grid{grid-template-columns:repeat(3,1fr)}
+}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR NAV -->
+<nav>
+  <div class="logo">
+    <h1>⚓ Archimedes</h1>
+    <p>彰化潮間帶調查機器人</p>
+  </div>
+  <ul>
+    <li><span class="section-head">專案</span></li>
+    <li><a href="#overview">專案概覽</a></li>
+    <li><a href="#species">目標生物</a></li>
+    <li><a href="#fleet">機器人艦隊</a></li>
+    <li><span class="section-head">硬體</span></li>
+    <li><a href="#hardware">機器人設計</a></li>
+    <li><a href="#arm">機械臂</a></li>
+    <li><a href="#model3d">3D 模型預覽</a></li>
+    <li><a href="#sensors">感測系統</a></li>
+    <li><span class="section-head">軟體</span></li>
+    <li><a href="#software">軟體架構</a></li>
+    <li><a href="#ultrasound">超音波處理</a></li>
+    <li><a href="#deeprl">Deep RL</a></li>
+    <li><a href="#navigation">導航系統</a></li>
+    <li><span class="section-head">調查</span></li>
+    <li><a href="#map">調查網格地圖</a></li>
+    <li><a href="#capacity">作業能力</a></li>
+    <li><a href="#priority">優先格排序</a></li>
+    <li><a href="#ecology">生態調查協定</a></li>
+    <li><span class="section-head">研究</span></li>
+    <li><a href="#findings">研究發現</a></li>
+    <li><a href="#progress">開發進度</a></li>
+    <li><a href="#bom">採購清單</a></li>
+    <li><a href="#hosting">網站架設</a></li>
+  </ul>
+</nav>
+
+<main>
+
+<!-- HERO -->
+<div class="hero" id="top">
+  <div class="hero-badge">2026年3月 — 開發中</div>
+  <h1><span>阿基米德</span> Archimedes</h1>
+  <h1>Survey Robot</h1>
+  <p class="subtitle">彰化潮間帶美食奧螻蛄蝦（鹿港蝦猴）棲地自動化調查系統<br>雙螺旋阿基米德推進 × 200kHz超音波 × YOLOv8視覺 × Deep RL</p>
+  <div class="stats-bar">
+    <div class="stat"><div class="val">5台</div><div class="lbl">機器人艦隊</div></div>
+    <div class="stat"><div class="val">151</div><div class="lbl">調查網格</div></div>
+    <div class="stat"><div class="val">102.5</div><div class="lbl">公頃調查面積</div></div>
+    <div class="stat"><div class="val">200kHz</div><div class="lbl">超音波頻率</div></div>
+    <div class="stat"><div class="val">8.5h</div><div class="lbl">電池續航</div></div>
+    <div class="stat"><div class="val">ROS2</div><div class="lbl">機器人作業系統</div></div>
+  </div>
+</div>
+
+<!-- OVERVIEW -->
+<section id="overview">
+  <h2>專案<span>概覽</span></h2>
+  <p class="section-intro">Archimedes 是一套完全自製的自主調查機器人系統，專為在彰化西海岸泥灘地執行美食奧螻蛄蝦棲地密度調查而設計。</p>
+
+  <div class="card-grid">
+    <div class="card highlight">
+      <div class="icon">🎯</div>
+      <h4>研究目標</h4>
+      <p>自動化偵測並記錄美食奧螻蛄蝦（Austinogebia edulis）洞穴位置與密度，建立彰化海岸棲地健康指標，取代耗時耗力的人工樣方調查。</p>
+    </div>
+    <div class="card highlight">
+      <div class="icon">📍</div>
+      <h4>作業地點</h4>
+      <p>彰化西海岸 5 個調查區：王功（41格）、漢寶（35格）、伸港1（29格）、伸港兩保育區之間（20格）、伸港2（26格）。總計 151 格，102.5 公頃。</p>
+    </div>
+    <div class="card highlight">
+      <div class="icon">🤖</div>
+      <h4>技術創新</h4>
+      <p>全球首例以阿基米德螺旋推進機器人執行潮間帶底棲生物聲學普查。結合 200kHz C-scan 超音波、YOLOv8 視覺、GPS/IMU 自主導航與 Deep RL 控制。</p>
+    </div>
+    <div class="card">
+      <div class="icon">💰</div>
+      <h4>成本優勢</h4>
+      <p>單機採購成本約 NT$6,741（路線A步進馬達版）。5 台艦隊總採購成本估計 ~NT$33,705，遠低於商業調查設備。</p>
+    </div>
+    <div class="card">
+      <div class="icon">📅</div>
+      <h4>開發時程</h4>
+      <p>2026年3月開始硬體採購，目標 2026年5月進行第一次王功野外部署。最佳調查窗口：3–5月、9–11月（水溫 22–29°C）。</p>
+    </div>
+    <div class="card">
+      <div class="icon">📊</div>
+      <h4>科學貢獻</h4>
+      <p>建立機器人密度圖 vs 人工樣方驗收框架（RMSE、r²、Moran's I、Bland-Altman），目標 ROC-AUC ≥ 0.80，達到可投稿學術期刊水準。</p>
+    </div>
+  </div>
+</section>
+
+<!-- SPECIES -->
+<section id="species">
+  <h2>目標生物：<span>美食奧螻蛄蝦</span></h2>
+  <p class="section-intro">Austinogebia edulis — 俗稱鹿港蝦猴，是彰化泥灘地的關鍵生態工程師。</p>
+
+  <div class="alert danger">
+    <span class="ai">🚨</span>
+    <div><strong>計數關鍵：Y 型洞穴有 2 個開口！</strong><br>
+    每隻奧螻蛄蝦建造 Y 型洞穴，有 <strong>2 個地面開口</strong>，相距 21–26cm。自動偵測時必須將 30cm 內的開口配對，再除以 2 才得到個體數量。本系統已實作配對邏輯（<code>is_new_individual</code> 欄位）。</div>
+  </div>
+
+  <div class="spec-grid">
+    <div class="spec-block">
+      <h4>生物學特性</h4>
+      <div class="spec-row"><span class="sk">學名</span><span class="sv">Austinogebia edulis</span></div>
+      <div class="spec-row"><span class="sk">俗名</span><span class="sv">鹿港蝦猴、美食奧螻蛄蝦</span></div>
+      <div class="spec-row"><span class="sk">分類</span><span class="sv">十足目 (Decapoda)，泥蝦科</span></div>
+      <div class="spec-row"><span class="sk">洞穴形狀</span><span class="sv">Y 型，雙開口</span></div>
+      <div class="spec-row"><span class="sk">開口間距</span><span class="sv">21–26 cm</span></div>
+      <div class="spec-row"><span class="sk">洞穴深度</span><span class="sv">30–60 cm（最深可達 1m）</span></div>
+      <div class="spec-row"><span class="sk">開口直徑</span><span class="sv">2–4 cm</span></div>
+      <div class="spec-row"><span class="sk">生態角色</span><span class="sv">生態工程師、生物擾動、養分循環</span></div>
+    </div>
+    <div class="spec-block">
+      <h4>族群密度基準（王功/深港）</h4>
+      <div class="spec-row"><span class="sk">健康族群</span><span class="sv" style="color:var(--green)">10–27 隻/m²</span></div>
+      <div class="spec-row"><span class="sk">中等密度</span><span class="sv" style="color:var(--yellow)">5–10 隻/m²（監測）</span></div>
+      <div class="spec-row"><span class="sk">退化警戒</span><span class="sv" style="color:var(--accent)">&lt;5 隻/m²</span></div>
+      <div class="spec-row"><span class="sk">最佳調查季</span><span class="sv">3–5月、9–11月</span></div>
+      <div class="spec-row"><span class="sk">避免時段</span><span class="sv">12–2月（退縮深層，洞口不可見）</span></div>
+      <div class="spec-row"><span class="sk">振動警戒半徑</span><span class="sv" style="color:var(--orange)">3–5 m（馬達振動）</span></div>
+      <div class="spec-row"><span class="sk">聲學偵測深度限制</span><span class="sv" style="color:var(--orange)">20–30 cm（只能偵測洞口段）</span></div>
+    </div>
+  </div>
+
+  <div class="alert warn">
+    <span class="ai">⚠️</span>
+    <div><strong>振動影響：</strong>螺旋馬達高頻振動在距離 3–5m 外即可驅使蝦猴縮回洞內，導致相機偵測視覺線索消失（false negative）。機器人無法在不擾動目標的情況下接近 — 這是此設計的固有限制。</div>
+  </div>
+</section>
+
+<!-- FLEET -->
+<section id="fleet">
+  <h2>機器人<span>艦隊規劃</span></h2>
+  <p class="section-intro">計劃部署 5 台相同規格的機器人，以平行作業覆蓋更大範圍的調查區域。</p>
+
+  <div class="fleet-grid">
+    <div class="fleet-card"><div class="fn">#1</div><div class="ft">王功主力機</div></div>
+    <div class="fleet-card"><div class="fn">#2</div><div class="ft">漢寶機</div></div>
+    <div class="fleet-card"><div class="fn">#3</div><div class="ft">伸港1機</div></div>
+    <div class="fleet-card"><div class="fn">#4</div><div class="ft">伸港2機</div></div>
+    <div class="fleet-card"><div class="fn">#5</div><div class="ft">備援/訓練機</div></div>
+  </div>
+
+  <div class="tbl-wrap" style="margin-top:28px">
+    <table>
+      <tr><th>項目</th><th>單機</th><th>×5 艦隊</th><th>備註</th></tr>
+      <tr><td>採購成本（路線A）</td><td>~NT$6,741</td><td><strong style="color:var(--teal)">~NT$33,705</strong></td><td>步進馬達版</td></tr>
+      <tr><td>NEMA23 步進馬達 + 10:1減速箱</td><td>4顆 × NT$1,050</td><td>20顆 = NT$21,000</td><td>natureqq88台中</td></tr>
+      <tr><td>TB6600 驅動器</td><td>4個 × NT$381</td><td>20個 = NT$7,620</td><td>BUY360-IC</td></tr>
+      <tr><td>LiFePO4 電池組</td><td>~NT$3,400</td><td>5組 = NT$17,000</td><td>8S1P 25.6V/8Ah</td></tr>
+      <tr><td>Raspberry Pi 4（4GB）</td><td>~NT$2,800</td><td>5台 = NT$14,000</td><td>含 SD 卡</td></tr>
+      <tr><td>超音波換能器（200kHz）</td><td>~NT$3,500</td><td>5個 = NT$17,500</td><td>Airmar P79 或自製</td></tr>
+      <tr><td>PCA9685 + 伺服馬達組</td><td>~NT$732</td><td>5組 = NT$3,660</td><td>MG996R × 2 + DS3225MG</td></tr>
+      <tr><td><strong>估計總計</strong></td><td colspan="2"><strong style="color:var(--yellow)">~NT$80,000–100,000（5台完整版）</strong></td><td>含RPi、電池、換能器</td></tr>
+    </table>
+  </div>
+
+  <div class="alert info" style="margin-top:20px">
+    <span class="ai">💡</span>
+    <div><strong>艦隊效益：</strong>5台同時作業，理論上可將 151格的調查時間縮短為單機的 1/5。王功（41格）可由 1台機器在 41次出動完成，5台艦隊只需 9次出動日（每天 3次）即可完成王功全區 15% 抽樣覆蓋。</div>
+  </div>
+</section>
+
+<!-- HARDWARE -->
+<section id="hardware">
+  <h2>機器人<span>硬體設計</span></h2>
+  <p class="section-intro">雙阿基米德螺旋推進平台，專為飽和泥沙（含水量 30–55%）環境設計。</p>
+
+  <div class="spec-grid">
+    <div class="spec-block">
+      <h4>🌀 螺旋推進系統</h4>
+      <div class="spec-row"><span class="sk">PVC管外徑</span><span class="sv">OD 168mm（6吋），長450mm</span></div>
+      <div class="spec-row"><span class="sk">螺旋葉片</span><span class="sv">內徑 84mm，外徑 134mm</span></div>
+      <div class="spec-row"><span class="sk">葉片厚度</span><span class="sv">5mm，共4圈，螺距112.5mm</span></div>
+      <div class="spec-row"><span class="sk">第二螺旋</span><span class="sv">Y偏移300mm，鏡像旋轉</span></div>
+      <div class="spec-row"><span class="sk">最大速度</span><span class="sv">0.088 m/s（5.3 m/min）@飽和沙</span></div>
+      <div class="spec-row"><span class="sk">緊急超速</span><span class="sv">0.146 m/s（100RPM模式）</span></div>
+      <div class="spec-row"><span class="sk">最大爬坡</span><span class="sv">30°+ @含水量30%以上</span></div>
+      <div class="spec-row"><span class="sk">乾沙限制</span><span class="sv">最大爬坡 2°（乾沙10%含水量）</span></div>
+    </div>
+    <div class="spec-block">
+      <h4>⚙️ 馬達與傳動</h4>
+      <div class="spec-row"><span class="sk">馬達型號</span><span class="sv">NEMA23 57BYGH78（1.8Nm）</span></div>
+      <div class="spec-row"><span class="sk">馬達數量</span><span class="sv">4顆（每螺旋前後各1）</span></div>
+      <div class="spec-row"><span class="sk">減速箱</span><span class="sv">10:1 行星減速箱（57mm）</span></div>
+      <div class="spec-row"><span class="sk">驅動器</span><span class="sv">TB6600 鋁殼步進驅動</span></div>
+      <div class="spec-row"><span class="sk">額定功率</span><span class="sv">72W @60RPM</span></div>
+      <div class="spec-row"><span class="sk">安全係數</span><span class="sv">~1.9×（有減速箱）</span></div>
+    </div>
+    <div class="spec-block">
+      <h4>🔋 電力系統</h4>
+      <div class="spec-row"><span class="sk">電池</span><span class="sv">8S1P LiFePO4 32700</span></div>
+      <div class="spec-row"><span class="sk">電壓/容量</span><span class="sv">25.6V / 8Ah = 153.6Wh</span></div>
+      <div class="spec-row"><span class="sk">BMS</span><span class="sv">Daly 8S 24V 20A（過充/放/流/均衡）</span></div>
+      <div class="spec-row"><span class="sk">續航時間</span><span class="sv">8.5小時正常作業</span></div>
+      <div class="spec-row"><span class="sk">電壓架構</span><span class="sv">24V主幹 → 6V伺服 → 5V RPi4</span></div>
+      <div class="spec-row"><span class="sk">警告閾值</span><span class="sv">&lt;30%警告，&lt;20%強制RTH</span></div>
+    </div>
+    <div class="spec-block">
+      <h4>🏠 機身與防水</h4>
+      <div class="spec-row"><span class="sk">主平台</span><span class="sv">508×878×12mm</span></div>
+      <div class="spec-row"><span class="sk">防水等級</span><span class="sv">IP68（1m/30min）</span></div>
+      <div class="spec-row"><span class="sk">電子密封艙</span><span class="sv">220×130×80mm HDPE</span></div>
+      <div class="spec-row"><span class="sk">電纜防水</span><span class="sv">M16/M12/M8 Cable Gland</span></div>
+      <div class="spec-row"><span class="sk">通氣</span><span class="sv">Gore-Tex 防壓差通氣閥</span></div>
+      <div class="spec-row"><span class="sk">主機</span><span class="sv">Raspberry Pi 4（4GB）</span></div>
+    </div>
+  </div>
+
+  <div class="chart-wrap" style="max-width:580px">
+    <h4 style="color:var(--muted);font-size:13px;margin-bottom:16px">推進效率 vs 含水量（Isaac Sim 135組模擬）</h4>
+    <canvas id="effChart"></canvas>
+  </div>
+</section>
+
+<!-- ARM -->
+<section id="arm">
+  <h2>3-DOF<span>機械臂</span></h2>
+  <p class="section-intro">自製八角形空心結構機械臂，重量輕、強度高，附超音波換能器俯仰座。</p>
+
+  <div class="spec-grid">
+    <div class="spec-block">
+      <h4>🦾 臂節規格</h4>
+      <div class="spec-row"><span class="sk">上臂（八角空心）</span><span class="sv">F2F=28.5mm，壁厚3.5mm，長200mm</span></div>
+      <div class="spec-row"><span class="sk">前臂（八角空心）</span><span class="sv">F2F=24mm，壁厚3.5mm，長220mm</span></div>
+      <div class="spec-row"><span class="sk">探針段</span><span class="sv">200mm（USB內視鏡 + 探針）</span></div>
+      <div class="spec-row"><span class="sk">最大臂展</span><span class="sv">0.57m（0.146+0.220+0.200+基座）</span></div>
+      <div class="spec-row"><span class="sk">導航到達閾值</span><span class="sv">0.35m（修正後，原為1.0m → BUG）</span></div>
+    </div>
+    <div class="spec-block">
+      <h4>🔧 伺服馬達</h4>
+      <div class="spec-row"><span class="sk">J1 底座轉台</span><span class="sv">DS3225MG（±180°，25kg·cm）</span></div>
+      <div class="spec-row"><span class="sk">J2 肩部</span><span class="sv">MG996R（±90°，13kg·cm）</span></div>
+      <div class="spec-row"><span class="sk">J3 肘部</span><span class="sv">MG996R（±90°，13kg·cm）</span></div>
+      <div class="spec-row"><span class="sk">J4 換能器俯仰</span><span class="sv">MG90S（±30°，2.2kg·cm）</span></div>
+      <div class="spec-row"><span class="sk">驅動板</span><span class="sv">PCA9685 I2C 16通道 PWM</span></div>
+    </div>
+  </div>
+
+  <div class="alert success">
+    <span class="ai">✅</span>
+    <div><strong>Dead Zone 錯誤已修正：</strong>原程式在距目標 1.0m 就切換 PROBE 模式，但臂展只有 0.57m，永遠搆不到洞口。已將 <code>NAV_ARRIVE_DIST</code> 改為 0.35m，修改 <code>rl_agent_node.py</code> 與 <code>survey_env.py</code>。</div>
+  </div>
+</section>
+
+<!-- 3D MODEL VIEWER -->
+<section id="model3d">
+  <h2>3D<span>模型預覽</span></h2>
+  <p class="section-intro">參考用 3D 模型，後續仍會繼續修改。實際列印零件：僅螺旋葉片組（PVC 管＋葉片）。</p>
+
+  <div style="margin-bottom:16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+    <label style="color:var(--muted);font-size:13px">選擇模型：</label>
+    <select id="stl-select" style="background:var(--card2);border:1px solid var(--border);color:var(--text);padding:8px 14px;border-radius:8px;font-size:13px;cursor:pointer">
+      <option value="../mechanics/stl/machine_v2_WITH_ARM_P3.stl">整機 + 機械臂（完整組裝）</option>
+      <option value="../mechanics/stl/machine_v2_ASSEMBLY.stl">整機（無手臂）</option>
+      <option value="../mechanics/stl/assembly_FULL.stl">螺旋組裝（待列印）</option>
+    </select>
+    <button id="stl-rotate-btn" style="background:rgba(0,180,216,.15);border:1px solid var(--teal);color:var(--teal);padding:8px 16px;border-radius:8px;font-size:13px;cursor:pointer">⏸ 暫停旋轉</button>
+    <span id="stl-status" style="color:var(--muted);font-size:12px">載入中…</span>
+  </div>
+
+  <div style="position:relative;width:100%;height:480px;background:#0a1628;border:1px solid var(--border);border-radius:14px;overflow:hidden">
+    <canvas id="stl-canvas" style="width:100%;height:100%;display:block"></canvas>
+    <div style="position:absolute;bottom:12px;right:14px;color:var(--muted);font-size:11px;pointer-events:none">
+      拖曳旋轉 · 滾輪縮放 · 右鍵平移
+    </div>
+  </div>
+
+  <div class="alert" style="margin-top:20px;background:rgba(255,209,102,.08);border-color:var(--yellow)">
+    <span class="ai" style="color:var(--yellow)">🖨️</span>
+    <div><strong>列印計劃：</strong>只列印<strong>螺旋葉片組</strong>（blade_A/B × 4 段 × 10 節），PVC 管體與鋼軸直接採購。機械臂、平台、支架改以鋁擠型或壓克力板加工。</div>
+  </div>
+</section>
+
+<script type="module">
+import * as THREE from 'three';
+import { STLLoader } from 'three/addons/loaders/STLLoader.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+(function(){
+  const canvas = document.getElementById('stl-canvas');
+  const status = document.getElementById('stl-status');
+  const select = document.getElementById('stl-select');
+  const rotBtn = document.getElementById('stl-rotate-btn');
+
+  // Renderer
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+  renderer.setPixelRatio(window.devicePixelRatio);
+  renderer.shadowMap.enabled = true;
+  renderer.setClearColor(0x0a1628, 1);
+
+  // Scene
+  const scene = new THREE.Scene();
+
+  // Camera
+  const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 5000);
+  camera.position.set(400, 300, 600);
+
+  // Lights
+  const amb = new THREE.AmbientLight(0x7a9cc0, 0.6);
+  scene.add(amb);
+  const dir = new THREE.DirectionalLight(0x00b4d8, 1.4);
+  dir.position.set(300, 500, 400);
+  scene.add(dir);
+  const back = new THREE.DirectionalLight(0xffffff, 0.3);
+  back.position.set(-300, -200, -300);
+  scene.add(back);
+
+  // Controls
+  const controls = new OrbitControls(camera, canvas);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.07;
+  controls.autoRotate = true;
+  controls.autoRotateSpeed = 1.2;
+
+  // Grid
+  const grid = new THREE.GridHelper(1000, 20, 0x1e3a5f, 0x1e3a5f);
+  scene.add(grid);
+
+  let mesh = null;
+  const loader = new STLLoader();
+
+  function loadModel(url) {
+    status.textContent = '載入中…';
+    if (mesh) { scene.remove(mesh); mesh.geometry.dispose(); mesh.material.dispose(); mesh = null; }
+    loader.load(url, (geo) => {
+      geo.computeBoundingBox();
+      const box = geo.boundingBox;
+      const cx = (box.max.x + box.min.x) / 2;
+      const cy = (box.max.y + box.min.y) / 2;
+      const cz = (box.max.z + box.min.z) / 2;
+      geo.translate(-cx, -cy, -cz);
+
+      const size = new THREE.Vector3();
+      box.getSize(size);
+      const maxDim = Math.max(size.x, size.y, size.z);
+      const scale = 400 / maxDim;
+
+      const mat = new THREE.MeshPhongMaterial({ color: 0x00b4d8, specular: 0x88ddff, shininess: 60, transparent: true, opacity: 0.92 });
+      mesh = new THREE.Mesh(geo, mat);
+      mesh.scale.setScalar(scale);
+      mesh.rotation.x = -Math.PI / 2;
+      scene.add(mesh);
+      grid.position.y = -size.z * scale / 2;
+      camera.position.set(0, 300, 600);
+      controls.target.set(0, 0, 0);
+      controls.update();
+      status.textContent = `已載入 — 頂點數：${(geo.attributes.position.count).toLocaleString()}`;
+    }, (xhr) => {
+      if (xhr.total) status.textContent = `下載中 ${Math.round(xhr.loaded/xhr.total*100)}%`;
+    }, (err) => {
+      status.textContent = '載入失敗（需本地伺服器）';
+      console.warn(err);
+    });
+  }
+
+  // Resize handler
+  function resize() {
+    const w = canvas.parentElement.clientWidth;
+    const h = canvas.parentElement.clientHeight;
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+  }
+  resize();
+  new ResizeObserver(resize).observe(canvas.parentElement);
+
+  // Rotate toggle
+  rotBtn.onclick = () => {
+    controls.autoRotate = !controls.autoRotate;
+    rotBtn.textContent = controls.autoRotate ? '⏸ 暫停旋轉' : '▶ 繼續旋轉';
+  };
+
+  // Model switch
+  select.onchange = () => loadModel(select.value);
+
+  // Animate
+  function animate() {
+    requestAnimationFrame(animate);
+    controls.update();
+    renderer.render(scene, camera);
+  }
+  animate();
+
+  // Initial load
+  loadModel(select.value);
+})();
+</script>
+
+<!-- SENSORS -->
+<section id="sensors">
+  <h2>感測<span>系統</span></h2>
+  <p class="section-intro">多模態感測融合：超音波穿透地表偵測洞穴，相機確認洞口，GPS/IMU 導航定位。</p>
+
+  <div class="card-grid">
+    <div class="card highlight">
+      <div class="icon">🔊</div>
+      <h4>200kHz 超音波 C-scan</h4>
+      <p><strong>Level 2 基礎版</strong>：MCP3208 12-bit ADC，1Msps<br>
+      <strong>Level 2 進階版</strong>：pic0rick RP2040 USB-CDC，<strong>60Msps</strong><br>
+      驅動：HV7360 高壓脈衝器（Active RTZ阻尼）<br>
+      放大：AD8331 TGC VGA（-28~+92dB）<br>
+      換能器：PZT-5A 壓電陶瓷，阻抗匹配層 7.1 MRayls</p>
+    </div>
+    <div class="card highlight">
+      <div class="icon">👁️</div>
+      <h4>YOLOv8-nano 視覺</h4>
+      <p>解析度：640×480<br>偵測類別：burrow（洞穴開口）<br>輸出：<code>center_world_m</code>（地面座標投影）<br>
+      限制：含水量 &gt;70% 時表面反光導致偵測率下降<br>
+      訓練目標：&gt;510 張標注影像（目標：5月野外採集）</p>
+    </div>
+    <div class="card">
+      <div class="icon">📡</div>
+      <h4>GPS + IMU 定位</h4>
+      <p>GPS：u-blox（±1.5m CEP 消費級）<br>
+      計畫升級：e-GPS NTRIP RTK → <strong>±2cm</strong>（台灣 NLSC 免費提供）<br>
+      IMU：BNO085（姿態、航向）<br>
+      缺口：無 Visual Servo，YOLO座標未用於底座微調</p>
+    </div>
+    <div class="card">
+      <div class="icon">💧</div>
+      <h4>輔助感測器</h4>
+      <p>電容式含水量感測器：地形評估（乾/濕沙判斷）<br>
+      潮位計：水位高度監測（漲潮速率 &gt;3cm/min → RTH）<br>
+      INA226 電流計：即時電量監控<br>
+      防水 USB 內視鏡（NT$300~500）：確認洞穴是否有生物</p>
+    </div>
+  </div>
+
+  <h3>聲學-沉積物耦合：彰化粉砂參數</h3>
+  <div class="alert warn">
+    <span class="ai">⚠️</span>
+    <div><strong>穿透深度限制（關鍵）：</strong>彰化粉砂（φ≈0.60–0.72）在 200kHz 的有效穿透深度僅 <strong>20–30cm</strong>（Wang-gong清潔粉砂）至 <strong>5–8cm</strong>（河口高濁度區）。奧螻蛄蝦洞穴深達 30–60cm，因此聲學只能確認洞口段，<strong>無法描繪完整洞穴</strong>。</div>
+  </div>
+
+  <div class="tbl-wrap">
+    <table>
+      <tr><th>參數</th><th>符號</th><th>彰化粉砂數值</th><th>對照：細沙</th></tr>
+      <tr><td>孔隙度</td><td>φ</td><td>0.60–0.72</td><td>0.35–0.45</td></tr>
+      <tr><td>框架體積模數</td><td>K_fr</td><td>2×10⁷ – 8×10⁷ Pa</td><td>5×10⁸ Pa+</td></tr>
+      <tr><td>滲透率</td><td>κ</td><td>10⁻¹³ – 10⁻¹² m²</td><td>10⁻¹¹ m²</td></tr>
+      <tr><td>Biot 快速波波速</td><td>V_p</td><td><strong>1450–1550 m/s</strong></td><td>1600–1800 m/s</td></tr>
+      <tr><td>衰減（清潔粉砂）</td><td>α</td><td><strong>35–60 dB/m</strong></td><td>3–10 dB/m</td></tr>
+      <tr><td>衰減（河口高濁度）</td><td>α</td><td><span style="color:var(--accent)"><strong>up to 300 dB/m</strong></span></td><td>—</td></tr>
+      <tr><td>DMOMP 頻散係數 β</td><td>β</td><td><strong>15–20</strong>（已更新）</td><td>3–5</td></tr>
+    </table>
+  </div>
+  <p style="font-size:12px;color:var(--muted);margin-top:8px">資料來源：Chen et al. (1988)，Gemini AI 研究分析，Biot (1956) 理論模型</p>
+</section>
+
+<!-- SOFTWARE -->
+<section id="software">
+  <h2>軟體<span>架構</span></h2>
+  <p class="section-intro">基於 ROS2 Humble 的分散式節點架構，全部模組均已測試通過。</p>
+
+  <h3>ROS2 節點圖</h3>
+  <div class="pipeline">
+    <div class="pipe-step">ultrasound_node<div class="sub">硬體驅動 / pic0rick</div></div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step">/raw_waveform<div class="sub">原始 A-scan</div></div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step">acoustic_processor<div class="sub">DMOMP + T-SAFT</div></div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step">/cscan_volume<div class="sub">3D 體素格</div></div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step">burrow_cnn<div class="sub">3D-CNN 偵測</div></div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step">/burrow_detection<div class="sub">洞穴位置</div></div>
+  </div>
+  <div class="pipeline" style="margin-top:16px">
+    <div class="pipe-step">detect_burrow<div class="sub">YOLOv8-nano</div></div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step">/burrow_detections<div class="sub">center_world_m</div></div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step">auto_navigate<div class="sub">GPS GOTO/SURVEY/RTH</div></div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step">rl_agent_node<div class="sub">Deep RL 臂控</div></div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step">mission_logger<div class="sub">GeoJSON 輸出</div></div>
+  </div>
+
+  <div class="card-grid" style="margin-top:28px">
+    <div class="card">
+      <h4>已完成節點</h4>
+      <p style="font-size:13px">✅ ultrasound_node（含 pic0rick 驅動）<br>
+      ✅ acoustic_processor（DMOMP + T-SAFT）<br>
+      ✅ acoustic_cscan（C-scan 重建）<br>
+      ✅ burrow_cnn（3D-CNN 雙頭）<br>
+      ✅ detect_burrow（YOLOv8）<br>
+      ✅ auto_navigate（GPS + SETTLING）<br>
+      ✅ rl_agent_node（Deep RL）<br>
+      ✅ mission_logger（Y型配對邏輯）<br>
+      ✅ recovery_behavior（5層自救）</p>
+    </div>
+    <div class="card">
+      <h4>整合測試結果</h4>
+      <p style="font-size:13px">✅ test_system_integration.py：<strong>37/37 通過</strong><br>
+      ✅ test_acoustic_cscan.py：<strong>27/27 通過</strong><br>
+      ✅ test_acoustic_integration.py：<strong>20/20 通過</strong><br>
+      ✅ E2E：80cm深度目標重建精確 80.0cm<br>
+      ✅ 效能：16pt=0.38s, 48pt=0.93s（PC）<br>
+      ⚠️ RPi4 約慢 5–10×（預期 4–10s/幀）</p>
+    </div>
+    <div class="card">
+      <h4>合成訓練數據集</h4>
+      <p style="font-size:13px">📊 <code>gen_synthetic_dataset.py</code><br>
+      800 個樣本（200/類）× 4 類：<br>
+      &nbsp;&nbsp;C = 純沙（無洞穴）<br>
+      &nbsp;&nbsp;B = 單洞穴<br>
+      &nbsp;&nbsp;O = 其他生物（貝類）<br>
+      &nbsp;&nbsp;M = 多洞穴<br>
+      格式：(25,25,40) float32 numpy<br>
+      下一步：野外採集真實 A-scan 訓練 CNN</p>
+    </div>
+  </div>
+</section>
+
+<!-- ULTRASOUND -->
+<section id="ultrasound">
+  <h2>超音波<span>處理流程</span></h2>
+  <p class="section-intro">A-core-2000 風格的 C-scan 成像管線，搭配頻散補償與 3D-CNN 偵測。</p>
+
+  <h3>訊號處理管線</h3>
+  <div class="pipeline">
+    <div class="pipe-step">A-scan 擷取<div class="sub">pic0rick 60Msps</div></div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step">DC 移除<div class="sub">before TVG!</div></div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step">TVG 補償<div class="sub">max 40dB</div></div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step">DMOMP<div class="sub">頻散相位校正</div></div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step">Hilbert 包絡<div class="sub">scipy.signal</div></div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step">T-SAFT<div class="sub">DAS + CF</div></div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step">3D-CNN<div class="sub">洞穴偵測</div></div>
+  </div>
+
+  <h3>DMOMP 頻散補償</h3>
+  <pre><code># 線性頻散模型：c(f) = c₀ + β × (f - f₀) / f₀
+# 彰化粉砂：c₀ ≈ 1500 m/s，β = 15–20，f₀ = 200kHz
+# 相位校正：Δφ = ω × 2d × (1/c₀ - 1/c(f))
+# 效果：深度目標 TOF 誤差從 ±5ms 降至 ±0.3ms</code></pre>
+
+  <div class="spec-grid">
+    <div class="spec-block">
+      <h4>3D-CNN 架構（burrow_cnn.py）</h4>
+      <div class="spec-row"><span class="sk">輸入尺寸</span><span class="sv">(25, 25, 40) float32</span></div>
+      <div class="spec-row"><span class="sk">輸出頭1</span><span class="sv">存在分類（sigmoid）</span></div>
+      <div class="spec-row"><span class="sk">輸出頭2</span><span class="sv">數量估計（0/1/2+ softmax）</span></div>
+      <div class="spec-row"><span class="sk">Z方向池化</span><span class="sv">MaxPool3d(1,1,4)（A-core-2000設計）</span></div>
+      <div class="spec-row"><span class="sk">可解釋性</span><span class="sv">Grad-CAM</span></div>
+      <div class="spec-row"><span class="sk">退化模式</span><span class="sv">無模型時自動切規則推論</span></div>
+      <div class="spec-row"><span class="sk">訓練目標</span><span class="sv">ROC-AUC ≥ 0.80</span></div>
+    </div>
+    <div class="spec-block">
+      <h4>T-SAFT 重建參數</h4>
+      <div class="spec-row"><span class="sk">算法</span><span class="sv">DAS + Coherence Factor</span></div>
+      <div class="spec-row"><span class="sk">最少掃描點</span><span class="sv">12點觸發重建</span></div>
+      <div class="spec-row"><span class="sv">最多掃描點</span><span class="sv">48點</span></div>
+      <div class="spec-row"><span class="sk">XY 格點</span><span class="sv">2cm間距</span></div>
+      <div class="spec-row"><span class="sk">Z 解析度</span><span class="sv">0.75mm/樣本（@1Msps）</span></div>
+      <div class="spec-row"><span class="sk">偵測深度範圍</span><span class="sv">0–80cm（沙中）</span></div>
+      <div class="spec-row"><span class="sk">實際有效深度</span><span class="sv">20–30cm（彰化粉砂）</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- DEEP RL -->
+<section id="deeprl">
+  <h2>Deep RL<span>控制系統</span></h2>
+  <p class="section-intro">三階段課程學習框架，從行走到探針插入的完整任務鏈。</p>
+
+  <div class="card-grid">
+    <div class="card">
+      <div class="icon">1️⃣</div>
+      <h4>Stage 1：LocoEnv（TD3）</h4>
+      <p>螺旋推進在不同地形的行走控制。<br>
+      觀測：24D（IMU + 速度 + 地形）<br>
+      動作：2D（左右螺旋轉速）<br>
+      地形：乾沙/濕沙/飽和沙 × 多坡度</p>
+    </div>
+    <div class="card">
+      <div class="icon">2️⃣</div>
+      <h4>Stage 2：ArmEnv（SAC）</h4>
+      <p>3-DOF 機械臂精確探針定位。<br>
+      觀測：18D（關節角 + 末端位置 + 目標）<br>
+      動作：3D（三個關節角度）<br>
+      成功條件：探針尖端距洞口 &lt;2.5cm</p>
+    </div>
+    <div class="card">
+      <div class="icon">3️⃣</div>
+      <h4>Stage 3：SurveyEnv（遷移學習）</h4>
+      <p>完整任務：導航 + 定位 + 探針。<br>
+      觀測：42D，動作：5D<br>
+      階段切換：nav_dist &lt; <strong>0.35m</strong>（修正後）<br>
+      MuJoCo 物理模擬環境</p>
+    </div>
+  </div>
+
+  <h3>模擬結果（Isaac Sim 135組）</h3>
+  <div class="tbl-wrap">
+    <table>
+      <tr><th>場景</th><th>含水量</th><th>載荷</th><th>直線速度</th><th>旋轉速度</th><th>效率</th></tr>
+      <tr><td>最優</td><td>50%</td><td>0kg</td><td><strong style="color:var(--green)">5.26 m/min</strong></td><td>20.2 deg/s</td><td>78%</td></tr>
+      <tr><td>+載荷</td><td>50%</td><td>10kg</td><td>5.07 m/min</td><td>19.5 deg/s</td><td>75%</td></tr>
+      <tr><td>乾沙</td><td>10%</td><td>0kg</td><td>2.1 m/min</td><td>8.3 deg/s</td><td>40%</td></tr>
+      <tr><td>最大爬坡</td><td>30%+</td><td>0kg</td><td colspan="2">20°+ 可爬</td><td>—</td></tr>
+    </table>
+  </div>
+
+  <div class="alert danger">
+    <span class="ai">⚠️</span>
+    <div><strong>突發漲潮失敗案例：</strong>機器人最高速 0.088m/s，35cm/60s 漲潮時需要 0.091m/s 才能逃脫。對策：緊急超速模式（100RPM = 0.146m/s），且將作業區限制在 &gt;30cm 高水位區域，漲潮速率 &gt;3cm/min 立即 RTH。</div>
+  </div>
+</section>
+
+<!-- NAVIGATION -->
+<section id="navigation">
+  <h2>導航<span>系統</span></h2>
+  <p class="section-intro">GPS + IMU 全局導航，搭配沉積物沉降等待模式（SETTLING）。</p>
+
+  <div class="card-grid">
+    <div class="card">
+      <h4>🗺️ 作業模式</h4>
+      <p><strong>GOTO</strong>：單點 GPS 前往<br>
+      <strong>SURVEY</strong>：割草機路線（行距 0.8m）<br>
+      <strong>SETTLING</strong>：到達後等待 180秒（泥沙沉降）<br>
+      <strong>RTH</strong>：返回出發點<br>
+      <strong>EMERGENCY</strong>：超速 RTH（潮位超閾值）</p>
+    </div>
+    <div class="card warn">
+      <h4>⚠️ 待實作：Visual Servo</h4>
+      <p>目前 YOLO 偵測到洞穴後，底座不會微調靠近，只記錄 GPS 座標。需要新增視覺伺服節點：<br>
+      使用 <code>center_world_m</code> 引導底座前進，直到 distance &lt; 0.35m 再切 PROBE。</p>
+    </div>
+    <div class="card success">
+      <h4>✅ 沉積物沉降等待</h4>
+      <p>新增 <code>SETTLING</code> 模式（<code>SCAN_SETTLE_S = 180秒</code>）：<br>
+      螺旋停止後等待 3 分鐘讓泥沙恢復，再推進到下一個航點進行聲學掃描。<br>
+      背景：螺旋擾動後聲學背景散射增加 10–20dB 長達 2–8 分鐘。</p>
+    </div>
+  </div>
+
+  <h3>定位精度比較</h3>
+  <div class="tbl-wrap">
+    <table>
+      <tr><th>方法</th><th>精度</th><th>基礎設施</th><th>適用性</th></tr>
+      <tr><td>消費級 GPS（u-blox M8）</td><td>±1.5–3.0m CEP</td><td>無需</td><td><span class="badge badge-red">不足</span></td></tr>
+      <tr><td>RTK-GPS（e-GPS NTRIP）</td><td><strong>±1–3cm</strong></td><td>台灣 NLSC 免費 NTRIP</td><td><span class="badge badge-green">✓ 推薦</span></td></tr>
+      <tr><td>UWB 室內定位</td><td>±10–30cm</td><td>需4+固定錨點</td><td><span class="badge badge-red">不適合野外</span></td></tr>
+      <tr><td>YOLO Visual Odometry</td><td>±5–20cm（相對）</td><td>無需</td><td><span class="badge badge-orange">短距補充</span></td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- MAP -->
+<section id="map">
+  <h2>調查網格<span>互動地圖</span></h2>
+  <p class="section-intro">2026年3月 彰化海岸資源調查網格（KML 解析），共 151 格、5 個調查區，總面積 102.5 公頃。</p>
+
+  <div class="map-legend">
+    <div class="legend-item"><div class="legend-dot" style="background:#2196F3"></div>王功（41格）</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#4CAF50"></div>漢寶（35格）</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#FF9800"></div>伸港1（29格）</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#9C27B0"></div>伸港兩保育區之間（20格）</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#F44336"></div>伸港2（26格）</div>
+  </div>
+  <div id="survey-map"></div>
+  <p style="font-size:12px;color:var(--muted);margin-top:8px">點擊各網格查看詳情。地圖使用 OpenStreetMap + Leaflet.js。</p>
+</section>
+
+<!-- CAPACITY -->
+<section id="capacity">
+  <h2>作業<span>能力分析</span></h2>
+  <p class="section-intro">單機電池限制下的實際掃描能力，與 5 台艦隊的整體效益。</p>
+
+  <div class="card-grid">
+    <div class="card highlight">
+      <h4>⚡ 單次電池作業能力</h4>
+      <p>總行程：<strong>2,693m</strong>（0.088m/s × 8.5h）<br>
+      行距 0.8m 下最大覆蓋面積：<strong>~2,154m²</strong>（46×46m）<br>
+      實際作業（40×40m子區段）：<strong>~2,000m 行程</strong><br>
+      時間：<strong>~6.3小時</strong>（含來回移動）</p>
+    </div>
+    <div class="card">
+      <h4>📐 標準網格作業估算</h4>
+      <p>完整格尺寸：~141×141m（20,000m²）<br>
+      每格完整覆蓋需要：<strong>10次充電</strong><br>
+      實際方案：每格抽樣 <strong>1個 40×40m 子區段</strong><br>
+      覆蓋率：8%（統計抽樣方式）<br>
+      每日（3次出動）：<strong>3格</strong></p>
+    </div>
+    <div class="card success">
+      <h4>🚀 5台艦隊效益</h4>
+      <p>並行作業：效率提升 <strong>5×</strong><br>
+      151格全部抽樣：<br>
+      &nbsp;單機：51天<br>
+      &nbsp;<strong>5台艦隊：~11天（含調度）</strong><br>
+      王功41格：<strong>3天</strong>（5台×3次/天）</p>
+    </div>
+  </div>
+
+  <div class="chart-wrap">
+    <h4 style="color:var(--muted);font-size:13px;margin-bottom:16px">各調查區網格數量 vs 估計作業天數</h4>
+    <canvas id="capacityChart"></canvas>
+  </div>
+</section>
+
+<!-- PRIORITY -->
+<section id="priority">
+  <h2>優先調查格<span>排序</span></h2>
+  <p class="section-intro">依完整度（面積佔 20,000m² 比例）與區域優先序排名。建議從王功最完整的格開始。</p>
+
+  <div class="tbl-wrap">
+    <table>
+      <tr><th>#</th><th>區域</th><th>格號</th><th>面積 m²</th><th>完整度</th><th>緯度</th><th>經度</th><th>建議</th></tr>
+      <tr><td><strong>1</strong></td><td><span class="badge badge-blue">王功</span></td><td>G3</td><td>20,000</td><td><span style="color:var(--green)">100%</span></td><td>23.96244°N</td><td>120.31475°E</td><td>首選部署格</td></tr>
+      <tr><td><strong>2</strong></td><td><span class="badge badge-blue">王功</span></td><td>L5</td><td>20,000</td><td><span style="color:var(--green)">100%</span></td><td>23.96697°N</td><td>120.31865°E</td><td></td></tr>
+      <tr><td><strong>3</strong></td><td><span class="badge badge-blue">王功</span></td><td>J4</td><td>19,976</td><td><span style="color:var(--green)">99.9%</span></td><td>23.96524°N</td><td>120.31651°E</td><td></td></tr>
+      <tr><td><strong>4</strong></td><td><span class="badge badge-blue">王功</span></td><td>D2</td><td>19,775</td><td><span style="color:var(--yellow)">98.9%</span></td><td>23.95974°N</td><td>120.31290°E</td><td></td></tr>
+      <tr><td><strong>5</strong></td><td><span class="badge badge-blue">王功</span></td><td>M5</td><td>19,719</td><td><span style="color:var(--yellow)">98.6%</span></td><td>23.96792°N</td><td>120.31848°E</td><td></td></tr>
+      <tr><td><strong>6</strong></td><td><span class="badge badge-blue">王功</span></td><td>I4</td><td>19,427</td><td><span style="color:var(--yellow)">97.1%</span></td><td>23.96431°N</td><td>120.31678°E</td><td></td></tr>
+      <tr><td><strong>7</strong></td><td><span class="badge badge-blue">王功</span></td><td>N6</td><td>18,752</td><td><span style="color:var(--yellow)">93.8%</span></td><td>23.96894°N</td><td>120.32055°E</td><td></td></tr>
+      <tr><td><strong>8</strong></td><td><span class="badge badge-blue">王功</span></td><td>E2</td><td>18,318</td><td><span style="color:var(--yellow)">91.6%</span></td><td>23.96061°N</td><td>120.31267°E</td><td></td></tr>
+      <tr><td><strong>9</strong></td><td><span class="badge badge-orange">伸港1</span></td><td>N3</td><td>20,000</td><td><span style="color:var(--green)">100%</span></td><td>24.16451°N</td><td>120.45733°E</td><td>需確認保育區法規</td></tr>
+      <tr><td><strong>10</strong></td><td><span class="badge badge-orange">伸港1</span></td><td>N2</td><td>20,000</td><td><span style="color:var(--green)">100%</span></td><td>24.16450°N</td><td>120.45537°E</td><td>需確認保育區法規</td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- ECOLOGY -->
+<section id="ecology">
+  <h2>生態調查<span>協定</span></h2>
+  <p class="section-intro">符合台灣海洋生態學界（TBIA）標準的調查設計與驗收方法。</p>
+
+  <div class="spec-grid">
+    <div class="spec-block">
+      <h4>🔬 標準樣方設計</h4>
+      <div class="spec-row"><span class="sk">穿越線方向</span><span class="sv">垂直海岸線</span></div>
+      <div class="spec-row"><span class="sk">穿越線長度</span><span class="sv">50–100m</span></div>
+      <div class="spec-row"><span class="sk">樣方大小</span><span class="sv">1×1m²</span></div>
+      <div class="spec-row"><span class="sk">樣方間距</span><span class="sv">每 10m 一個</span></div>
+      <div class="spec-row"><span class="sk">最少樣方數</span><span class="sv">n=30（每站）</span></div>
+      <div class="spec-row"><span class="sk">最少測站數</span><span class="sv">3站</span></div>
+    </div>
+    <div class="spec-block">
+      <h4>📊 驗收統計方法</h4>
+      <div class="spec-row"><span class="sk">主要指標</span><span class="sv">RMSE（隻/m²）、Pearson r²</span></div>
+      <div class="spec-row"><span class="sk">目標</span><span class="sv">r² &gt; 0.75，ROC-AUC ≥ 0.80</span></div>
+      <div class="spec-row"><span class="sk">信賴區間</span><span class="sv">95% CI，寬度 &lt;10% 均值</span></div>
+      <div class="spec-row"><span class="sk">空間分析</span><span class="sv">Moran's I（空間自相關）</span></div>
+      <div class="spec-row"><span class="sk">配對誤差</span><span class="sv">Burrow Identity Error &lt; 5%</span></div>
+      <div class="spec-row"><span class="sk">偏差分析</span><span class="sv">Bland-Altman 圖</span></div>
+    </div>
+  </div>
+
+  <h3>地面真值採集方法</h3>
+  <div class="card-grid">
+    <div class="card">
+      <div class="icon">💉</div>
+      <h4>樹脂澆注（Resin Casting）</h4>
+      <p>聚酯樹脂注入洞穴，固化後挖出，獲得完整 3D 洞穴幾何形狀。確認 1隻蝦：2個開口的比例。<br><strong>用途：</strong>洞穴形態研究、設計聲學模型</p>
+    </div>
+    <div class="card">
+      <div class="icon">🔧</div>
+      <h4>吸水泵（Yabby Pump）</h4>
+      <p>6 吋管徑吸水泵，30–50cm 深，每洞 3 次抽吸。確認率 70–85%（部分洞穴空置）。<br><strong>用途：</strong>密度計數驗收，最常用方法</p>
+    </div>
+    <div class="card">
+      <div class="icon">⛏️</div>
+      <h4>手動挖掘</h4>
+      <p>30×30cm 框，挖至 40cm 深。最準確但永久破壞基底，不可重複測量。<br><strong>用途：</strong>生活史研究，特殊樣點</p>
+    </div>
+  </div>
+</section>
+
+<!-- FINDINGS -->
+<section id="findings">
+  <h2>Gemini AI<span>研究發現</span></h2>
+  <p class="section-intro">透過 Gemini CLI 對專案所有程式碼與文件進行分析，識別出的關鍵缺口。完整報告：<code>docs/gemini_research_briefing.md</code></p>
+
+  <div class="card-grid">
+    <div class="card danger">
+      <div class="icon">🐛</div>
+      <h4>Dead Zone BUG（已修正 ✅）</h4>
+      <p>原：在距目標 <strong>1.0m</strong> 停下切換 PROBE，但臂展只有 0.57m → 永遠搆不到洞口。<br>修正：<code>NAV_ARRIVE_DIST = 0.35m</code>（<code>survey_env.py</code>、<code>rl_agent_node.py</code>）</p>
+    </div>
+    <div class="card danger">
+      <div class="icon">🔢</div>
+      <h4>Y型洞穴計數錯誤（已修正 ✅）</h4>
+      <p>每隻蝦有 2 個開口，原系統每個開口算一隻 → <strong>100% 高估族群數量</strong>。<br>修正：<code>mission_logger.py</code> 加入 30cm 配對邏輯，GeoJSON 分別記錄 <code>total_openings</code> / <code>total_individuals</code>。</p>
+    </div>
+    <div class="card warn">
+      <div class="icon">📏</div>
+      <h4>聲學穿透不足（文件化）</h4>
+      <p>彰化粉砂 200kHz 穿透深度 <strong>20–30cm</strong>（Wang-gong），河口高濁度僅 5–8cm。蝦洞深度 30–60cm → 聲學只能確認洞口存在。深度量測需機械臂探針。</p>
+    </div>
+    <div class="card warn">
+      <div class="icon">📳</div>
+      <h4>振動擾動（已知限制）</h4>
+      <p>馬達高頻振動在 <strong>3–5m</strong> 外即驅使蝦猴縮回洞內，導致機器人到達時洞穴已「空置」。無已發表行為恢復時間數據。</p>
+    </div>
+    <div class="card">
+      <div class="icon">📡</div>
+      <h4>無 Visual Servo（待實作）</h4>
+      <p>YOLO 偵測到洞穴後，底座不使用視覺回饋微調位置，GPS 精度 ±1.5m 無法精確定位。需新增視覺伺服閉迴路節點。</p>
+    </div>
+    <div class="card success">
+      <div class="icon">⏰</div>
+      <h4>沉積物沉降等待（已實作 ✅）</h4>
+      <p>螺旋停止後加入 <strong>180秒 SETTLING 狀態</strong>（<code>auto_navigate.py</code>），等待泥沙擾動平息後再進行聲學掃描。</p>
+    </div>
+  </div>
+</section>
+
+<!-- PROGRESS -->
+<section id="progress">
+  <h2>開發<span>進度</span></h2>
+  <p class="section-intro">Archimedes 完整功能清單，截至 2026年3月19日。</p>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:32px">
+    <div>
+      <h3 style="color:var(--green)">✅ 已完成</h3>
+      <div class="progress-list">
+        <div class="progress-item"><span class="progress-icon">✅</span><div><div class="pi-title">3D CAD 機械設計</div><div class="pi-desc">NEMA23 雙螺旋、Phase 3 機械臂、平台肋條</div></div></div>
+        <div class="progress-item"><span class="progress-icon">✅</span><div><div class="pi-title">MuJoCo 物理模擬</div><div class="pi-desc">archimedes_survey.xml，7/8 場景通過</div></div></div>
+        <div class="progress-item"><span class="progress-icon">✅</span><div><div class="pi-title">Isaac Sim 矩陣模擬</div><div class="pi-desc">135 組運行，峰值 5.26m/min</div></div></div>
+        <div class="progress-item"><span class="progress-icon">✅</span><div><div class="pi-title">ROS2 完整節點圖</div><div class="pi-desc">9個節點全部實作完成</div></div></div>
+        <div class="progress-item"><span class="progress-icon">✅</span><div><div class="pi-title">超音波硬體指南（Level 2）</div><div class="pi-desc">完整製造手冊，含 DMOMP 啟用指南</div></div></div>
+        <div class="progress-item"><span class="progress-icon">✅</span><div><div class="pi-title">DMOMP 頻散補償</div><div class="pi-desc">acoustic_processor.py，β=15–20 彰化粉砂</div></div></div>
+        <div class="progress-item"><span class="progress-icon">✅</span><div><div class="pi-title">T-SAFT + 3D-CNN 洞穴偵測</div><div class="pi-desc">雙頭 CNN，Grad-CAM 可解釋性</div></div></div>
+        <div class="progress-item"><span class="progress-icon">✅</span><div><div class="pi-title">合成訓練資料生成器</div><div class="pi-desc">800 樣本（C/B/O/M 四類）</div></div></div>
+        <div class="progress-item"><span class="progress-icon">✅</span><div><div class="pi-title">系統整合測試（37/37）</div><div class="pi-desc">test_system_integration.py 全通過</div></div></div>
+        <div class="progress-item"><span class="progress-icon">✅</span><div><div class="pi-title">Deep RL 三階段訓練框架</div><div class="pi-desc">TD3（行走）+ SAC（臂）+ 遷移學習</div></div></div>
+        <div class="progress-item"><span class="progress-icon">✅</span><div><div class="pi-title">GPS/IMU 自主導航</div><div class="pi-desc">GOTO / SURVEY / SETTLING / RTH / EMERGENCY</div></div></div>
+        <div class="progress-item"><span class="progress-icon">✅</span><div><div class="pi-title">pic0rick 60Msps 驅動</div><div class="pi-desc">USB-CDC 協議，RP2040</div></div></div>
+        <div class="progress-item"><span class="progress-icon">✅</span><div><div class="pi-title">KML 調查網格解析</div><div class="pi-desc">151格，5區，GeoJSON 輸出</div></div></div>
+        <div class="progress-item"><span class="progress-icon">✅</span><div><div class="pi-title">Y型洞穴配對邏輯</div><div class="pi-desc">mission_logger.py，30cm 閾值</div></div></div>
+        <div class="progress-item"><span class="progress-icon">✅</span><div><div class="pi-title">沉積物沉降等待（SETTLING）</div><div class="pi-desc">auto_navigate.py，180秒等待</div></div></div>
+      </div>
+    </div>
+    <div>
+      <h3 style="color:var(--orange)">⏳ 待完成</h3>
+      <div class="progress-list">
+        <div class="progress-item"><span class="progress-icon">🛒</span><div><div class="pi-title">Phase 1 採購執行</div><div class="pi-desc">MG996R + PCA9685 + 換能器 + LiFePO4 電池（5套）</div></div></div>
+        <div class="progress-item"><span class="progress-icon">📡</span><div><div class="pi-title">e-GPS NTRIP RTK 申請</div><div class="pi-desc">台灣 NLSC 免費帳號，提升定位至 ±2cm</div></div></div>
+        <div class="progress-item"><span class="progress-icon">👁️</span><div><div class="pi-title">Visual Servo 節點</div><div class="pi-desc">YOLO center_world_m → 底座微調到 0.35m 以內</div></div></div>
+        <div class="progress-item"><span class="progress-icon">📸</span><div><div class="pi-title">野外訓練資料（510+張）</div><div class="pi-desc">洞穴影像標注，王功/鹿港溪口，使用 Roboflow</div></div></div>
+        <div class="progress-item"><span class="progress-icon">🧠</span><div><div class="pi-title">3D-CNN 正式訓練</div><div class="pi-desc">目標 AUC ≥ 0.80，需真實 A-scan 數據</div></div></div>
+        <div class="progress-item"><span class="progress-icon">📋</span><div><div class="pi-title">保育區研究許可</div><div class="pi-desc">彰化區漁會（04-7784106）或農業部漁業署</div></div></div>
+        <div class="progress-item"><span class="progress-icon">🌊</span><div><div class="pi-title">CWA API Key 申請</div><div class="pi-desc">opendata.cwa.gov.tw，免費，即時潮位數據</div></div></div>
+        <div class="progress-item"><span class="progress-icon">📊</span><div><div class="pi-title">密度驗收腳本</div><div class="pi-desc">scripts/validate_density.py（RMSE/r²/Moran's I）</div></div></div>
+        <div class="progress-item"><span class="progress-icon">🔬</span><div><div class="pi-title">DMOMP β 野外校正</div><div class="pi_desc">採集沉積物樣本，量測實際頻散係數</div></div></div>
+        <div class="progress-item"><span class="progress-icon">🚀</span><div><div class="pi-title">第一次野外部署</div><div class="pi-desc">目標：2026年5月，地點：王功，格G3/L5/J4</div></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- BOM -->
+<section id="bom">
+  <h2>採購清單<span>BOM（5台艦隊）</span></h2>
+  <p class="section-intro">路線A：NEMA23 步進馬達版。經濟實惠，適合初期部署。</p>
+
+  <div class="tbl-wrap">
+    <table>
+      <tr><th>零件</th><th>規格</th><th>單價(NT$)</th><th>數量/台</th><th>數量/5台</th><th>小計(NT$)</th><th>供應商</th></tr>
+      <tr><td>NEMA23 步進馬達</td><td>57BYGH78，1.8Nm</td><td>1,050</td><td>4</td><td>20</td><td>21,000</td><td>natureqq88台中</td></tr>
+      <tr><td>行星減速箱 10:1</td><td>57mm，NT$400~600</td><td>500</td><td>4</td><td>20</td><td>10,000</td><td>淘寶/露天</td></tr>
+      <tr><td>TB6600 步進驅動</td><td>鋁殼，4A</td><td>381</td><td>4</td><td>20</td><td>7,620</td><td>BUY360-IC</td></tr>
+      <tr><td>MG996R 伺服</td><td>13kg·cm</td><td>125</td><td>2</td><td>10</td><td>1,250</td><td>宇倉電子</td></tr>
+      <tr><td>DS3225MG 伺服</td><td>25kg·cm</td><td>400</td><td>1</td><td>5</td><td>2,000</td><td>蝦皮</td></tr>
+      <tr><td>PCA9685 驅動板</td><td>16路I2C PWM</td><td>82</td><td>1</td><td>5</td><td>410</td><td>世代電子</td></tr>
+      <tr><td>LiFePO4 電池組</td><td>8S1P 25.6V/8Ah</td><td>3,400</td><td>1</td><td>5</td><td>17,000</td><td>太陽能材料行</td></tr>
+      <tr><td>Raspberry Pi 4</td><td>4GB RAM</td><td>2,800</td><td>1</td><td>5</td><td>14,000</td><td>聯強/博客來</td></tr>
+      <tr><td>超音波換能器</td><td>200kHz，防水BNC</td><td>3,500</td><td>1</td><td>5</td><td>17,500</td><td>自製或Airmar</td></tr>
+      <tr><td>HDPE 密封艙</td><td>220×130×80mm</td><td>800</td><td>1</td><td>5</td><td>4,000</td><td>五金行</td></tr>
+      <tr><td>Cable Gland 組</td><td>M16/M12/M8</td><td>400</td><td>1套</td><td>5套</td><td>2,000</td><td>五金行</td></tr>
+      <tr><td>BNO085 IMU</td><td>9軸 I2C</td><td>380</td><td>1</td><td>5</td><td>1,900</td><td>DigiKey</td></tr>
+      <tr style="background:rgba(0,180,216,.05)"><td colspan="5"><strong>5台艦隊估計總計</strong></td><td><strong style="color:var(--teal);font-size:18px">~NT$98,680</strong></td><td>不含PVC管/平台材料</td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- HOSTING -->
+<section id="hosting">
+  <h2>網站<span>架設指南</span></h2>
+  <p class="section-intro">將此專案報告頁面部署到網際網路上，分享給研究夥伴或指導老師。</p>
+
+  <div class="host-option">
+    <h4>🐙 方案A：GitHub Pages <span class="host-tag">免費 推薦</span></h4>
+    <p>最適合學術/開源專案，免費靜態網站托管。</p>
+    <pre><code># 1. 建立 GitHub 帳號後，建立 repository "archimedes-survey"
+# 2. 上傳整個專案資料夾
+git init
+git add .
+git commit -m "Initial Archimedes project"
+git remote add origin https://github.com/你的帳號/archimedes-survey.git
+git push -u origin main
+
+# 3. 在 GitHub Settings → Pages → Branch: main → /docs 資料夾
+# 4. 等 2-3 分鐘後訪問：
+# https://你的帳號.github.io/archimedes-survey/archimedes_project_report.html</code></pre>
+  </div>
+
+  <div class="host-option">
+    <h4>⚡ 方案B：Netlify 拖放部署 <span class="host-tag beta">5分鐘完成</span></h4>
+    <p>不需要 Git，直接拖放資料夾即可部署。</p>
+    <pre><code># 1. 前往 app.netlify.com → 登入（GitHub 帳號）
+# 2. 拖放 archimedes-survey 整個資料夾到 Netlify 拖放區
+# 3. 立即獲得 URL：https://xxx.netlify.app/docs/archimedes_project_report.html
+# 4. 可選：設定自訂網域（需購買，或使用免費的 netlify.app 子網域）</code></pre>
+  </div>
+
+  <div class="host-option">
+    <h4>🖥️ 方案C：本機伺服器（離線示範）</h4>
+    <pre><code># 在專案根目錄執行：
+cd C:/Users/aa598/archimedes-survey
+python -m http.server 8080
+
+# 瀏覽器開啟：
+# http://localhost:8080/docs/archimedes_project_report.html
+
+# 局域網內其他設備（同一WiFi）：
+# http://你的IP:8080/docs/archimedes_project_report.html</code></pre>
+  </div>
+
+  <div class="host-option">
+    <h4>🗂️ 方案D：後端 API 服務（進階）</h4>
+    <p>若需要即時任務數據查詢、機器人狀態監控，可搭配 FastAPI 後端。</p>
+    <pre><code># 已有 control/web_dashboard.py（FastAPI + WebSocket）
+# 啟動方式：
+cd C:/Users/aa598/archimedes-survey
+uvicorn control.web_dashboard:app --host 0.0.0.0 --port 8080
+
+# 即可在網路上監看機器人即時狀態</code></pre>
+  </div>
+
+  <div class="alert info" style="margin-top:20px">
+    <span class="ai">💡</span>
+    <div><strong>推薦路徑：</strong>開發期間用方案C本機預覽；準備分享時用方案A GitHub Pages（免費、有版控）。若要展示給漁業署或學術單位，方案B Netlify 最快速（5分鐘上線）。</div>
+  </div>
+</section>
+
+</main><!-- end main -->
+
+<!-- EMBEDDED GEOJSON + LEAFLET MAP INIT -->
+<script>
+// ===== SURVEY GRID GEOJSON DATA =====
+</script>
+<script src="../data/survey_geojson_final.js"></script>
+<script>
+// ===== LEAFLET MAP =====
+(function(){
+  const map = L.map('survey-map', {
+    center: [24.05, 120.40],
+    zoom: 11,
+    zoomControl: true
+  });
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors',
+    maxZoom: 18
+  }).addTo(map);
+
+  if(typeof SURVEY_GEOJSON !== 'undefined'){
+    L.geoJSON(SURVEY_GEOJSON, {
+      style: function(feature){
+        return {
+          fillColor: feature.properties.color,
+          fillOpacity: 0.45,
+          color: feature.properties.color,
+          weight: 1.5,
+          opacity: 0.9
+        };
+      },
+      onEachFeature: function(feature, layer){
+        const p = feature.properties;
+        const completeness = p.area > 0 ? Math.round(p.area / 200) + '%' : '—';
+        layer.bindPopup(
+          '<div style="font-family:sans-serif;min-width:180px">' +
+          '<b style="font-size:16px">' + p.zone + ' — 格 ' + p.name + '</b><br>' +
+          '<hr style="border-color:#333;margin:6px 0">' +
+          '面積：' + (p.area > 0 ? p.area.toLocaleString() + ' m²' : '—') + '<br>' +
+          '完整度：' + completeness + '<br>' +
+          '中心：' + p.lat.toFixed(5) + '°N, ' + p.lon.toFixed(5) + '°E' +
+          '</div>'
+        );
+        layer.on('mouseover', function(){ layer.setStyle({fillOpacity:0.75, weight:2.5}); });
+        layer.on('mouseout', function(){ layer.setStyle({fillOpacity:0.45, weight:1.5}); });
+      }
+    }).addTo(map);
+  }
+})();
+
+// ===== CHART.JS: EFFICIENCY vs MOISTURE =====
+(function(){
+  const ctx = document.getElementById('effChart');
+  if(!ctx) return;
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['10%\n乾沙','20%','30%','40%','50%\n最優','60%','70%','80%','90%\n近液態'],
+      datasets: [{
+        label: '推進效率 (%)',
+        data: [40, 52, 62, 72, 78, 76, 73, 68, 60],
+        backgroundColor: ['#ef5350','#ff7043','#ffa726','#ffca28','#00b4d8','#26c6da','#29b6f6','#42a5f5','#5c6bc0'],
+        borderRadius: 6
+      },{
+        label: '直線速度 (m/min)',
+        data: [2.1, 2.7, 3.2, 4.5, 5.26, 5.0, 4.7, 4.2, 3.5],
+        type: 'line',
+        borderColor: '#06d6a0',
+        backgroundColor: 'transparent',
+        pointBackgroundColor: '#06d6a0',
+        tension: 0.3,
+        yAxisID: 'y2'
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { labels: { color: '#7a9cc0' } } },
+      scales: {
+        x: { ticks: { color: '#7a9cc0' }, grid: { color: 'rgba(255,255,255,.05)' } },
+        y: { ticks: { color: '#7a9cc0' }, grid: { color: 'rgba(255,255,255,.05)' }, title: { display: true, text: '效率 (%)', color: '#7a9cc0' }, max: 100 },
+        y2: { position: 'right', ticks: { color: '#06d6a0' }, grid: { display: false }, title: { display: true, text: '速度 (m/min)', color: '#06d6a0' }, max: 7 }
+      }
+    }
+  });
+})();
+
+// ===== CHART.JS: SURVEY CAPACITY =====
+(function(){
+  const ctx = document.getElementById('capacityChart');
+  if(!ctx) return;
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['王功','漢寶','伸港1','伸港兩保育區之間','伸港2'],
+      datasets: [
+        { label: '網格數', data: [41, 35, 29, 20, 26], backgroundColor: ['#2196F3','#4CAF50','#FF9800','#9C27B0','#F44336'], borderRadius: 8 },
+        { label: '5台艦隊作業天數', data: [5, 4, 3, 2, 3], backgroundColor: 'rgba(0,180,216,.3)', borderColor: '#00b4d8', borderWidth: 2, type: 'line', yAxisID: 'y2', tension: 0.3 }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { labels: { color: '#7a9cc0' } } },
+      scales: {
+        x: { ticks: { color: '#7a9cc0' }, grid: { color: 'rgba(255,255,255,.05)' } },
+        y: { ticks: { color: '#7a9cc0' }, grid: { color: 'rgba(255,255,255,.05)' }, title: { display: true, text: '網格數', color: '#7a9cc0' } },
+        y2: { position: 'right', ticks: { color: '#00b4d8' }, grid: { display: false }, title: { display: true, text: '作業天數（5台艦隊）', color: '#00b4d8' } }
+      }
+    }
+  });
+})();
+
+// ===== ACTIVE NAV =====
+(function(){
+  const sections = document.querySelectorAll('section[id]');
+  const links = document.querySelectorAll('nav a[href^="#"]');
+  const obs = new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{
+      if(e.isIntersecting){
+        links.forEach(l=>l.classList.remove('active'));
+        const active = document.querySelector('nav a[href="#'+e.target.id+'"]');
+        if(active) active.classList.add('active');
+      }
+    });
+  }, { threshold: 0.3 });
+  sections.forEach(s=>obs.observe(s));
+})();
+</script>
+</body>
+</html>

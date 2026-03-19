@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+venv/
+.env
+
+# Large binary / training data
+data/cscan_dataset/
+*.npy
+*.pkl
+*.pt
+*.onnx
+*.pth
+
+# Large STL files (blades only — keep assembly)
+mechanics/stl/blade_A_seg*.stl
+mechanics/stl/blade_B_seg*.stl
+mechanics/stl/machine_v2_ASSEMBLY.usd
+
+# Isaac Sim / simulation outputs
+*.png
+*.jpg
+*.jpeg
+simulation/
+
+# Logs / missions
+*.log
+~/archimedes_missions/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/settings.json
+.idea/
+*.swp
