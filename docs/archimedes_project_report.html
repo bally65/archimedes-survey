@@ -195,12 +195,12 @@ pre code{background:none;border:none;padding:0;font-size:13px;color:#a8d8ff}
   <div class="hero-badge">2026年3月 — 開發中</div>
   <h1><span>阿基米德</span> Archimedes</h1>
   <h1>Survey Robot</h1>
-  <p class="subtitle">彰化潮間帶美食奧螻蛄蝦（鹿港蝦猴）棲地自動化調查系統<br>雙螺旋阿基米德推進 × 200kHz超音波 × YOLOv8視覺 × Deep RL</p>
+  <p class="subtitle">彰化潮間帶美食奧螻蛄蝦（鹿港蝦猴）棲地自動化調查系統<br>雙螺旋阿基米德推進 × Biot優化超音波 × YOLOv8視覺 × Deep RL</p>
   <div class="stats-bar">
     <div class="stat"><div class="val">5台</div><div class="lbl">機器人艦隊</div></div>
     <div class="stat"><div class="val">151</div><div class="lbl">調查網格</div></div>
     <div class="stat"><div class="val">102.5</div><div class="lbl">公頃調查面積</div></div>
-    <div class="stat"><div class="val">200kHz</div><div class="lbl">超音波頻率</div></div>
+    <div class="stat"><div class="val">50–200kHz</div><div class="lbl">超音波頻率範圍</div></div>
     <div class="stat"><div class="val">8.5h</div><div class="lbl">電池續航</div></div>
     <div class="stat"><div class="val">ROS2</div><div class="lbl">機器人作業系統</div></div>
   </div>
@@ -553,8 +553,11 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
   <div class="card-grid">
     <div class="card highlight">
       <div class="icon">🔊</div>
-      <h4>200kHz 超音波 C-scan</h4>
-      <p><strong>Level 2 基礎版</strong>：MCP3208 12-bit ADC，1Msps<br>
+      <h4>超音波 C-scan（Biot 優化版）</h4>
+      <p><strong>泥質底質（彰化/鹿港）</strong>：200kHz，穿透 20–30cm<br>
+      <strong>沙質底質（潮間帶）</strong>：推薦 <strong>50–100kHz</strong><br>
+      &nbsp;&nbsp;↳ 50kHz 波長≈3cm，規避 Rayleigh 散射（沙粒 &lt;2mm）<br>
+      <strong>Level 2 基礎版</strong>：MCP3208 12-bit ADC，1Msps<br>
       <strong>Level 2 進階版</strong>：pic0rick RP2040 USB-CDC，<strong>60Msps</strong><br>
       驅動：HV7360 高壓脈衝器（Active RTZ阻尼）<br>
       放大：AD8331 TGC VGA（-28~+92dB）<br>
@@ -585,12 +588,23 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     </div>
   </div>
 
-  <h3>聲學-沉積物耦合：彰化粉砂參數</h3>
-  <div class="alert warn">
+  <h3>Biot 理論：介質聲學參數對比</h3>
+  <div class="alert warn" style="margin-bottom:16px">
     <span class="ai">⚠️</span>
-    <div><strong>穿透深度限制（關鍵）：</strong>彰化粉砂（φ≈0.60–0.72）在 200kHz 的有效穿透深度僅 <strong>20–30cm</strong>（Wang-gong清潔粉砂）至 <strong>5–8cm</strong>（河口高濁度區）。奧螻蛄蝦洞穴深達 30–60cm，因此聲學只能確認洞口段，<strong>無法描繪完整洞穴</strong>。</div>
+    <div><strong>穿透深度限制（關鍵）：</strong>彰化粉砂（φ≈0.60–0.72）在 200kHz 的有效穿透深度僅 <strong>20–30cm</strong>（Wang-gong清潔粉砂）至 <strong>5–8cm</strong>（河口高濁度區）。奧螻蛄蝦洞穴深達 30–60cm，因此聲學只能確認洞口段，<strong>無法描繪完整洞穴</strong>。沙質底質使用 50kHz 可改善穿透。</div>
   </div>
 
+  <div class="tbl-wrap">
+    <table>
+      <tr><th>介質狀態</th><th>P 波波速 (m/s)</th><th>聲阻抗 (MRayl)</th><th>品質因子 Q</th><th>備注</th></tr>
+      <tr><td>乾沙</td><td>200–600</td><td>0.30–1.02</td><td>20–50</td><td>低衰減，但無水時換能器耦合差</td></tr>
+      <tr><td><strong>飽和沙（潮汐充水）</strong></td><td><strong>1500–1850</strong></td><td><strong>2.85–3.88</strong></td><td>5–15</td><td style="color:var(--green)">水分為天然聲耦合劑，探測最佳時機</td></tr>
+      <tr><td>空氣空腔</td><td>330–345</td><td>0.00043</td><td>N/A</td><td style="color:var(--accent)"><strong>阻抗比≈8000:1 → 近全反射 + 180°相位反轉</strong></td></tr>
+      <tr><td>水充填空腔</td><td>1450–1550</td><td>1.54</td><td>&gt;1000</td><td>相位不反轉，頻率輕微下移</td></tr>
+    </table>
+  </div>
+
+  <h3>彰化粉砂沉積物參數</h3>
   <div class="tbl-wrap">
     <table>
       <tr><th>參數</th><th>符號</th><th>彰化粉砂數值</th><th>對照：細沙</th></tr>
@@ -603,7 +617,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
       <tr><td>DMOMP 頻散係數 β</td><td>β</td><td><strong>15–20</strong>（已更新）</td><td>3–5</td></tr>
     </table>
   </div>
-  <p style="font-size:12px;color:var(--muted);margin-top:8px">資料來源：Chen et al. (1988)，Gemini AI 研究分析，Biot (1956) 理論模型</p>
+  <p style="font-size:12px;color:var(--muted);margin-top:8px">資料來源：Chen et al. (1988)，Gemini AI 研究分析，Biot (1956) 理論，潮汐飽和沙質介質超音波探測研究報告（2026）</p>
 </section>
 
 <!-- SOFTWARE -->
@@ -676,23 +690,65 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 <!-- ULTRASOUND -->
 <section id="ultrasound">
   <h2>超音波<span>處理流程</span></h2>
-  <p class="section-intro">A-core-2000 風格的 C-scan 成像管線，搭配頻散補償與 3D-CNN 偵測。</p>
+  <p class="section-intro">A-core-2000 風格的 C-scan 成像管線，整合 DPTM 峰值追蹤、相位反轉偵測與體積量化。</p>
 
-  <h3>訊號處理管線</h3>
+  <h3>訊號處理管線（v2.1 Biot 優化）</h3>
   <div class="pipeline">
     <div class="pipe-step">A-scan 擷取<div class="sub">pic0rick 60Msps</div></div>
     <div class="pipe-arrow">→</div>
     <div class="pipe-step">DC 移除<div class="sub">before TVG!</div></div>
     <div class="pipe-arrow">→</div>
-    <div class="pipe-step">TVG 補償<div class="sub">max 40dB</div></div>
+    <div class="pipe-step">TVG 補償<div class="sub">60dB/m（粉砂）</div></div>
     <div class="pipe-arrow">→</div>
     <div class="pipe-step">DMOMP<div class="sub">頻散相位校正</div></div>
     <div class="pipe-arrow">→</div>
-    <div class="pipe-step">Hilbert 包絡<div class="sub">scipy.signal</div></div>
+    <div class="pipe-step" style="border-color:var(--teal)">DPTM 峰值<div class="sub">Hilbert+拋物線插值</div></div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step" style="border-color:var(--teal)">相位反轉判斷<div class="sub">air / water / unknown</div></div>
     <div class="pipe-arrow">→</div>
     <div class="pipe-step">T-SAFT<div class="sub">DAS + CF</div></div>
     <div class="pipe-arrow">→</div>
+    <div class="pipe-step" style="border-color:var(--green)">體積估算<div class="sub">Simpson 積分</div></div>
+    <div class="pipe-arrow">→</div>
     <div class="pipe-step">3D-CNN<div class="sub">洞穴偵測</div></div>
+  </div>
+
+  <div class="spec-grid" style="margin-top:24px">
+    <div class="spec-block" style="border-color:var(--teal)">
+      <h4>DPTM — 次採樣 ToF 精化</h4>
+      <div class="spec-row"><span class="sk">原理</span><span class="sv">Hilbert 包絡 → 拋物線插值</span></div>
+      <div class="spec-row"><span class="sk">精度提升</span><span class="sv">±1/2採樣週期 → 次採樣精度</span></div>
+      <div class="spec-row"><span class="sk">@1 Msps</span><span class="sv">深度誤差 &lt;0.38mm</span></div>
+      <div class="spec-row"><span class="sk">@60 Msps</span><span class="sv">深度誤差 &lt;6µm</span></div>
+      <div class="spec-row"><span class="sk">vs 閾值法</span><span class="sv">低 SNR 下不抖動（報告推薦）</span></div>
+    </div>
+    <div class="spec-block" style="border-color:var(--accent)">
+      <h4>相位反轉偵測（Phase Reversal）</h4>
+      <div class="spec-row"><span class="sk">物理依據</span><span class="sv">飽和沙→空氣阻抗比 ≈ 8000:1</span></div>
+      <div class="spec-row"><span class="sk">空氣空腔</span><span class="sv">回波 180° 反轉 + 極高振幅</span></div>
+      <div class="spec-row"><span class="sk">水充填洞穴</span><span class="sv">相位不反轉，頻率輕微下移</span></div>
+      <div class="spec-row"><span class="sk">SNR 門檻</span><span class="sv">&lt;10dB → needs_verification</span></div>
+      <div class="spec-row"><span class="sk">輸出欄位</span><span class="sv">cavity_type / snr_db / needs_verification</span></div>
+    </div>
+    <div class="spec-block">
+      <h4>3D-CNN 架構（burrow_cnn.py）</h4>
+      <div class="spec-row"><span class="sk">輸入尺寸</span><span class="sv">(25, 25, 40) float32</span></div>
+      <div class="spec-row"><span class="sk">輸出頭1</span><span class="sv">存在分類（sigmoid）</span></div>
+      <div class="spec-row"><span class="sk">輸出頭2</span><span class="sv">數量估計（0/1/2+ softmax）</span></div>
+      <div class="spec-row"><span class="sk">可解釋性</span><span class="sv">Grad-CAM</span></div>
+      <div class="spec-row"><span class="sk">退化模式</span><span class="sv">無模型時自動切規則推論</span></div>
+      <div class="spec-row"><span class="sk">訓練目標</span><span class="sv">ROC-AUC ≥ 0.80</span></div>
+    </div>
+    <div class="spec-block">
+      <h4>T-SAFT + 體積量化</h4>
+      <div class="spec-row"><span class="sk">算法</span><span class="sv">DAS Backprojection + Coherence Factor</span></div>
+      <div class="spec-row"><span class="sk">最少掃描點</span><span class="sv">12點觸發重建</span></div>
+      <div class="spec-row"><span class="sk">XY 格點</span><span class="sv">2cm間距（Nyquist λ/2）</span></div>
+      <div class="spec-row"><span class="sk">Z 解析度</span><span class="sv">0.75mm/樣本（@1Msps）</span></div>
+      <div class="spec-row"><span class="sk">體積算法</span><span class="sv">Simpson 積分（切片橢圓面積）</span></div>
+      <div class="spec-row"><span class="sk">體積精度</span><span class="sv">誤差 &lt;2.6%（文獻體素化法對照）</span></div>
+      <div class="spec-row"><span class="sk">輸出欄位</span><span class="sv">volume_cm3 / cavity_type / needs_verification</span></div>
+    </div>
   </div>
 
   <h3>DMOMP 頻散補償</h3>
@@ -701,28 +757,18 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 # 相位校正：Δφ = ω × 2d × (1/c₀ - 1/c(f))
 # 效果：深度目標 TOF 誤差從 ±5ms 降至 ±0.3ms</code></pre>
 
-  <div class="spec-grid">
-    <div class="spec-block">
-      <h4>3D-CNN 架構（burrow_cnn.py）</h4>
-      <div class="spec-row"><span class="sk">輸入尺寸</span><span class="sv">(25, 25, 40) float32</span></div>
-      <div class="spec-row"><span class="sk">輸出頭1</span><span class="sv">存在分類（sigmoid）</span></div>
-      <div class="spec-row"><span class="sk">輸出頭2</span><span class="sv">數量估計（0/1/2+ softmax）</span></div>
-      <div class="spec-row"><span class="sk">Z方向池化</span><span class="sv">MaxPool3d(1,1,4)（A-core-2000設計）</span></div>
-      <div class="spec-row"><span class="sk">可解釋性</span><span class="sv">Grad-CAM</span></div>
-      <div class="spec-row"><span class="sk">退化模式</span><span class="sv">無模型時自動切規則推論</span></div>
-      <div class="spec-row"><span class="sk">訓練目標</span><span class="sv">ROC-AUC ≥ 0.80</span></div>
-    </div>
-    <div class="spec-block">
-      <h4>T-SAFT 重建參數</h4>
-      <div class="spec-row"><span class="sk">算法</span><span class="sv">DAS + Coherence Factor</span></div>
-      <div class="spec-row"><span class="sk">最少掃描點</span><span class="sv">12點觸發重建</span></div>
-      <div class="spec-row"><span class="sv">最多掃描點</span><span class="sv">48點</span></div>
-      <div class="spec-row"><span class="sk">XY 格點</span><span class="sv">2cm間距</span></div>
-      <div class="spec-row"><span class="sk">Z 解析度</span><span class="sv">0.75mm/樣本（@1Msps）</span></div>
-      <div class="spec-row"><span class="sk">偵測深度範圍</span><span class="sv">0–80cm（沙中）</span></div>
-      <div class="spec-row"><span class="sk">實際有效深度</span><span class="sv">20–30cm（彰化粉砂）</span></div>
-    </div>
+  <h3>超音波 vs GPR 比較</h3>
+  <div class="tbl-wrap">
+    <table>
+      <tr><th>性能維度</th><th>超音波（本系統）</th><th>GPR（地面穿透雷達）</th></tr>
+      <tr><td>飽和鹽水沙地穿透</td><td style="color:var(--green)"><strong>極強（水分為耦合介質）</strong></td><td style="color:var(--accent)">極弱（高導電率衰減）</td></tr>
+      <tr><td>深度量化精度</td><td style="color:var(--green)"><strong>mm–cm 級（ToF）</strong></td><td>較低（介電常數波動）</td></tr>
+      <tr><td>空腔內部成像</td><td>可穿透水充填空腔</td><td>難穿透含鹽液體</td></tr>
+      <tr><td>掃描速度</td><td>較慢（需連續耦合）</td><td>極快（可車載作業）</td></tr>
+      <tr><td>適用場景</td><td style="color:var(--teal)">潮汐線以下，關鍵空腔定量</td><td>淺層乾燥區結構探索</td></tr>
+    </table>
   </div>
+  <p style="font-size:12px;color:var(--muted);margin-top:8px">最佳策略：GPR 定淺層結構 + UT 對潮汐線以下關鍵空腔精確量化體積</p>
 </section>
 
 <!-- DEEP RL -->
