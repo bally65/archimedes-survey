@@ -95,6 +95,54 @@ def load_priority_cells(path: str) -> list[dict]:
     return cells
 
 
+def adjust_priority_for_tide(
+    cells: list[dict],
+    tide_hours_remaining: dict[str, float]
+) -> list[dict]:
+    """
+    根據各區域距漲潮剩餘時間調整格網優先分數。
+
+    漲潮越近（hours 越小）的區域，優先分數加成越高（最多 +30 分）。
+    這確保機器人優先搶攻即將被海水淹沒的低灘區域。
+
+    Args:
+        cells: 格網列表（含 zone, priority_score 欄位）
+        tide_hours_remaining: {zone名稱: 距漲潮剩餘小時數}
+            例：{"王功": 3.5, "漢寶": 4.0, "伸港1": 5.5}
+            未出現的 zone 視為無緊迫性（不加成）
+
+    Returns:
+        adjusted cells（原 dict 不被修改，回傳 copy）
+    """
+    if not tide_hours_remaining:
+        return cells
+
+    adjusted = []
+    for cell in cells:
+        zone  = cell.get("zone", "")
+        hours = tide_hours_remaining.get(zone, 999.0)
+
+        # 線性加成：6小時窗口內開始加分，0小時時最高 +30 分
+        if hours <= 0:
+            bonus = 30.0   # 已漲潮，若仍在作業最高優先
+        elif hours < 6.0:
+            bonus = (1.0 - hours / 6.0) * 30.0
+        else:
+            bonus = 0.0
+
+        c = dict(cell)
+        c["priority_score"] = round(c.get("priority_score", 0.0) + bonus, 2)
+        c["tide_bonus"]     = round(bonus, 1)
+        c["tide_hours_left"] = round(hours, 2)
+        adjusted.append(c)
+
+    if any(c.get("tide_bonus", 0) > 0 for c in adjusted):
+        boosted = [z for z in tide_hours_remaining if tide_hours_remaining[z] < 6.0]
+        print(f"[潮汐調整] 緊迫區域（< 6h）：{boosted}，分數已提升")
+
+    return adjusted
+
+
 # ---------------------------------------------------------------------------
 # 分配演算法
 # ---------------------------------------------------------------------------
@@ -426,6 +474,17 @@ def main():
         default=0.0,
         help="只分配 priority_score >= 此值的格網（預設 0，全部）"
     )
+    parser.add_argument(
+        "--tide-hours",
+        type=str,
+        default=None,
+        metavar="JSON",
+        help=(
+            "各區域距漲潮剩餘時間（JSON 格式）。"
+            "例：'{\"王功\":3.5,\"漢寶\":4.0}' "
+            "→ 6小時內的區域獲得最高 +30 優先分加成，確保先調查快被淹的格網。"
+        )
+    )
 
     args = parser.parse_args()
 
@@ -436,6 +495,14 @@ def main():
 
     # --- 載入格網 ---
     cells = load_priority_cells(args.cells)
+
+    # 潮汐優先調整（--tide-hours 指定時執行）
+    if args.tide_hours:
+        try:
+            tide_data = json.loads(args.tide_hours)
+            cells = adjust_priority_for_tide(cells, tide_data)
+        except json.JSONDecodeError as e:
+            print(f"[警告] --tide-hours JSON 格式錯誤，忽略潮汐調整：{e}")
 
     # 過濾低優先格網
     if args.min_priority > 0:

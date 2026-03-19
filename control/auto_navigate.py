@@ -38,7 +38,7 @@ try:
     from rclpy.node import Node
     from geometry_msgs.msg import Twist
     from sensor_msgs.msg import NavSatFix, Imu
-    from std_msgs.msg import Float32, String
+    from std_msgs.msg import Bool, Float32, String
 except ImportError:
     sys.exit("ROS2 not found.")
 
@@ -47,6 +47,7 @@ except ImportError:
 # Parameters
 # ---------------------------------------------------------------------------
 ARRIVE_RADIUS_M  = 1.0    # within this → waypoint reached
+SCAN_SETTLE_S    = 180.0  # seconds to wait after stopping before acoustic scan (silt turbulence)
 SURVEY_STEP_M    = 0.8    # lawnmower row spacing
 SURVEY_ROWS      = 5      # number of lawnmower rows
 MAX_LINEAR_MPS   = 0.088  # max straight-line speed (m/s) from simulation
@@ -55,12 +56,17 @@ KP_HEADING       = 1.2    # proportional heading gain
 TIDAL_ABORT_CM   = 10.0   # tidal water level to abort mission
 LOW_BATT_PCT     = 20.0   # battery % to trigger RTH
 CTRL_HZ          = 5.0    # control loop rate
+# VFH (Vector Field Histogram) obstacle avoidance
+VFH_SECTORS      = 12     # 360°/12 = 30° per sector
+VFH_THRESHOLD_M  = 0.50   # obstacle closer than this → steer away
+VFH_SLOW_ZONE_M  = 1.20   # obstacle in this range → reduce speed proportionally
 
 
 class Mode(Enum):
     IDLE      = auto()
     GOTO      = auto()
     SURVEY    = auto()
+    SETTLING  = auto()   # motors stopped, waiting SCAN_SETTLE_S before acoustic scan valid
     RTH       = auto()
     EMERGENCY = auto()
 
@@ -116,9 +122,17 @@ class AutoNavigateNode(Node):
         # GOTO / SURVEY waypoints
         self._waypoints: list[tuple[float, float]] = []
         self._wp_idx    = 0
+        self._settling_until: float = 0.0   # epoch-s when SETTLING phase ends
 
         # Burrow found list
         self._burrows: list[dict] = []
+
+        # Visual servo alignment flag（由 visual_servo_node 發布）
+        self._visual_servo_aligned: bool = False
+
+        # VFH obstacle sectors（由超音波/雷射測距發布，12扇區，單位公尺）
+        # sector 0 = 正前方，順時針；99.0 = 無障礙物
+        self._vfh_sectors: list[float] = [99.0] * VFH_SECTORS
 
         # --- publishers ---
         self._pub_vel    = self.create_publisher(Twist,  "/cmd_vel",     10)
@@ -126,12 +140,16 @@ class AutoNavigateNode(Node):
         self._pub_status = self.create_publisher(String, "/auto_status", 10)
 
         # --- subscribers ---
-        self.create_subscription(NavSatFix, "/gps/fix",           self._cb_gps,     10)
-        self.create_subscription(Imu,       "/imu/data",          self._cb_imu,     10)
-        self.create_subscription(Float32,   "/battery/voltage",   self._cb_battery, 10)
-        self.create_subscription(Float32,   "/tidal/range_cm",    self._cb_tidal,   10)
-        self.create_subscription(String,    "/burrow_detections", self._cb_burrow,  10)
-        self.create_subscription(String,    "/auto_command",      self._cb_cmd,     10)
+        self.create_subscription(NavSatFix, "/gps/fix",              self._cb_gps,          10)
+        self.create_subscription(Imu,       "/imu/data",             self._cb_imu,          10)
+        self.create_subscription(Float32,   "/battery/voltage",      self._cb_battery,      10)
+        self.create_subscription(Float32,   "/tidal/range_cm",       self._cb_tidal,        10)
+        self.create_subscription(String,    "/burrow_detections",    self._cb_burrow,       10)
+        self.create_subscription(String,    "/auto_command",         self._cb_cmd,          10)
+        # 視覺伺服對準旗標（visual_servo_node 發布）
+        self.create_subscription(Bool,      "/visual_servo/aligned", self._cb_vs_aligned,   10)
+        # VFH 障礙物距離（超音波節點發布，JSON 陣列 12 個浮點數）
+        self.create_subscription(String,    "/obstacle/distances",   self._cb_vfh_sectors,  10)
 
         # --- control timer ---
         self.create_timer(1.0 / CTRL_HZ, self._control_loop)
@@ -209,6 +227,36 @@ class AutoNavigateNode(Node):
         elif cmd.get("mode") == "rth":
             self._start_rth()
 
+    def _cb_vs_aligned(self, msg: Bool):
+        """
+        接收視覺伺服對準旗標。
+        當 visual_servo_node 確認洞穴中心在 0.35m 以內（aligned=True），
+        立即切入 SETTLING 模式，無需等待 GPS 航點抵達距離判斷。
+        """
+        was_aligned = self._visual_servo_aligned
+        self._visual_servo_aligned = msg.data
+
+        if msg.data and not was_aligned and self._mode == Mode.SURVEY:
+            self.get_logger().info(
+                "[AutoNav] 視覺伺服對準！立即進入 SETTLING（沉沙等待 "
+                f"{int(SCAN_SETTLE_S)}s）")
+            self._stop()
+            now_s = self.get_clock().now().nanoseconds * 1e-9
+            self._settling_until = now_s + SCAN_SETTLE_S
+            self._mode = Mode.SETTLING
+
+    def _cb_vfh_sectors(self, msg: String):
+        """
+        接收 VFH 障礙物扇區距離（12 個浮點數，30°/扇區，單位公尺）。
+        由超音波/雷射測距節點發布，用於本地反應式避障。
+        """
+        try:
+            sectors = json.loads(msg.data)
+            if isinstance(sectors, list) and len(sectors) == VFH_SECTORS:
+                self._vfh_sectors = [float(d) for d in sectors]
+        except Exception:
+            pass
+
     # ------------------------------------------------------------------
     # Mode setters
     # ------------------------------------------------------------------
@@ -261,6 +309,18 @@ class AutoNavigateNode(Node):
             self._mode = Mode.EMERGENCY      # keep EMERGENCY flag
             return
 
+        if self._mode == Mode.SETTLING:
+            now_s = self.get_clock().now().nanoseconds * 1e-9
+            if now_s >= self._settling_until:
+                self.get_logger().info("Sediment settled — advancing to next waypoint")
+                self._wp_idx += 1
+                if self._wp_idx >= len(self._waypoints):
+                    self._mode = Mode.SURVEY
+                    self._on_mission_complete()
+                else:
+                    self._mode = Mode.SURVEY
+            return
+
         if self._mode in (Mode.GOTO, Mode.SURVEY, Mode.RTH):
             if not self._gps_fix:
                 self.get_logger().warn("No GPS fix, stopping")
@@ -279,10 +339,11 @@ class AutoNavigateNode(Node):
 
         if dist < ARRIVE_RADIUS_M:
             self.get_logger().info(
-                f"Waypoint {self._wp_idx+1}/{len(self._waypoints)} reached")
-            self._wp_idx += 1
-            if self._wp_idx >= len(self._waypoints):
-                self._on_mission_complete()
+                f"Waypoint {self._wp_idx+1}/{len(self._waypoints)} reached — "
+                f"settling {int(SCAN_SETTLE_S)}s for sediment to settle")
+            self._stop()
+            self._settling_until = self.get_clock().now().nanoseconds * 1e-9 + SCAN_SETTLE_S
+            self._mode = Mode.SETTLING
             return
 
         # Heading error [-180, +180]
@@ -293,6 +354,27 @@ class AutoNavigateNode(Node):
         linear_v  = MAX_LINEAR_MPS * speed_factor
         angular_v = max(-MAX_ANGULAR_RPS,
                         min(MAX_ANGULAR_RPS, math.radians(heading_err) * KP_HEADING))
+
+        # --- VFH 本地反應式避障 ---
+        # 前方扇區（sector 0）若有障礙物，降速或停止；側面障礙物偏轉
+        front_dist  = self._vfh_sectors[0]       # 正前方
+        left_dist   = self._vfh_sectors[11]      # 左前（330°）
+        right_dist  = self._vfh_sectors[1]       # 右前（30°）
+
+        if front_dist < VFH_THRESHOLD_M:
+            # 正前方有障礙物：停止並向障礙物較少的一側偏轉
+            linear_v = 0.0
+            if left_dist > right_dist:
+                angular_v =  MAX_ANGULAR_RPS    # 往左偏
+            else:
+                angular_v = -MAX_ANGULAR_RPS    # 往右偏
+            self.get_logger().warn(
+                f"[VFH] 前方障礙物 {front_dist:.2f}m < {VFH_THRESHOLD_M}m → 偏轉"
+            )
+        elif front_dist < VFH_SLOW_ZONE_M:
+            # 進入慢速區：線速度按距離比例縮減
+            vfh_factor = (front_dist - VFH_THRESHOLD_M) / (VFH_SLOW_ZONE_M - VFH_THRESHOLD_M)
+            linear_v  *= max(0.2, vfh_factor)
 
         twist = Twist()
         twist.linear.x  = linear_v

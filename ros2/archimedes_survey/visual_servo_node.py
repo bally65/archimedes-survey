@@ -66,14 +66,17 @@ except ImportError:
 # ---------------------------------------------------------------------------
 DEFAULT_ARM_REACH_M       = 0.35   # 機械臂最大有效臂展（已修正 from 1.0m）
 DEFAULT_MAX_APPROACH_M    = 1.5    # 超過此距離不伺服
-DEFAULT_KP_LINEAR         = 0.3    # 線速度比例增益（P控制器；未來可擴充為 PI）
+DEFAULT_KP_LINEAR         = 0.3    # 線速度比例增益（PI 控制器）
 DEFAULT_KP_ANGULAR        = 0.8    # 角速度比例增益
+DEFAULT_KI_LINEAR         = 0.05   # 線速度積分增益（消除沙地摩擦穩態誤差）
+DEFAULT_KI_ANGULAR        = 0.10   # 角速度積分增益
 DEFAULT_MAX_V             = 0.10   # 最大線速度 m/s（不超過模擬值 0.088）
 DEFAULT_MAX_W             = 0.20   # 最大角速度 rad/s
 DEFAULT_NO_DETECT_TIMEOUT = 5.0    # 無偵測超時 (s)
 DEFAULT_MIN_CONFIDENCE    = 0.6    # 最低信心閾值（過濾反光/陰影誤判）
 DEFAULT_LOCK_HYSTERESIS_M = 0.15   # 洞穴鎖定遲滯距離（防止多洞穴間擺盪）
 CONTROL_HZ                = 10.0   # 控制迴路頻率
+INTEGRAL_WINDUP_MAX       = 0.30   # 積分防飽和上限（避免快速切換時積累過大）
 
 
 class VisualServoNode(Node):
@@ -87,6 +90,8 @@ class VisualServoNode(Node):
         self.declare_parameter("max_approach_m",     DEFAULT_MAX_APPROACH_M)
         self.declare_parameter("kp_linear",          DEFAULT_KP_LINEAR)
         self.declare_parameter("kp_angular",         DEFAULT_KP_ANGULAR)
+        self.declare_parameter("ki_linear",          DEFAULT_KI_LINEAR)
+        self.declare_parameter("ki_angular",         DEFAULT_KI_ANGULAR)
         self.declare_parameter("max_v",              DEFAULT_MAX_V)
         self.declare_parameter("max_w",              DEFAULT_MAX_W)
         self.declare_parameter("no_detect_timeout_s",  DEFAULT_NO_DETECT_TIMEOUT)
@@ -98,6 +103,8 @@ class VisualServoNode(Node):
         self._max_approach    = self.get_parameter("max_approach_m").value
         self._kp_lin          = self.get_parameter("kp_linear").value
         self._kp_ang          = self.get_parameter("kp_angular").value
+        self._ki_lin          = self.get_parameter("ki_linear").value
+        self._ki_ang          = self.get_parameter("ki_angular").value
         self._max_v           = self.get_parameter("max_v").value
         self._max_w           = self.get_parameter("max_w").value
         self._timeout         = self.get_parameter("no_detect_timeout_s").value
@@ -110,6 +117,10 @@ class VisualServoNode(Node):
         self._latest_detections: list = []      # 最新偵測結果列表
         self._servo_active: bool = False        # 伺服是否啟動中
         self._locked_burrow_id: str | None = None  # 當前鎖定洞穴 ID（防擺盪）
+        # PI 積分項（消除沙地摩擦穩態誤差）
+        self._integral_dist: float    = 0.0
+        self._integral_heading: float = 0.0
+        self._last_ctrl_t: float      = time.monotonic()
 
         # --- 訂閱者 ---
         self._sub_detections = self.create_subscription(
@@ -131,8 +142,9 @@ class VisualServoNode(Node):
         )
 
         self.get_logger().info(
-            f"[VisualServo] 啟動：arm_reach={self._arm_reach}m, "
-            f"kp_lin={self._kp_lin}, kp_ang={self._kp_ang}, "
+            f"[VisualServo] 啟動（PI控制器）：arm_reach={self._arm_reach}m, "
+            f"kp_lin={self._kp_lin}, ki_lin={self._ki_lin}, "
+            f"kp_ang={self._kp_ang}, ki_ang={self._ki_ang}, "
             f"max_v={self._max_v}m/s, timeout={self._timeout}s"
         )
 
@@ -166,6 +178,8 @@ class VisualServoNode(Node):
                 )
             self._aligned = False
             self._servo_active = False
+            self._integral_dist = 0.0        # 重置積分（防止殘留積分影響下次伺服）
+            self._integral_heading = 0.0
             self._publish_stop()
             self._publish_status(
                 state="timeout",
@@ -196,6 +210,8 @@ class VisualServoNode(Node):
                 )
             self._aligned = True
             self._servo_active = False
+            self._integral_dist = 0.0        # 對準後重置積分
+            self._integral_heading = 0.0
             self._publish_stop()
             self._publish_aligned(True)
             self._publish_status(
@@ -208,6 +224,8 @@ class VisualServoNode(Node):
 
         # --- 情況 4：目標太遠（> max_approach_m）→ 不伺服 ---
         if dist > self._max_approach:
+            self._integral_dist = 0.0        # 重置積分（目標超出範圍）
+            self._integral_heading = 0.0
             self._publish_stop()
             self._publish_aligned(False)
             self._publish_status(
@@ -218,19 +236,35 @@ class VisualServoNode(Node):
             )
             return
 
-        # --- 情況 5：在伺服範圍（arm_reach < dist <= max_approach）→ 比例控制 ---
+        # --- 情況 5：在伺服範圍（arm_reach < dist <= max_approach）→ PI 控制 ---
         self._aligned = False
         self._servo_active = True
 
-        # 線速度：正比於 (dist - arm_reach)，向目標前進
-        v_raw = self._kp_lin * (dist - self._arm_reach)
-        v     = min(v_raw, self._max_v)
+        # 計算 dt（用於積分）
+        t_now = time.monotonic()
+        dt = min(t_now - self._last_ctrl_t, 0.5)  # 限制 dt 上限，防止長暫停後積分爆衝
+        self._last_ctrl_t = t_now
 
-        # 角速度：正比於橫向誤差，負號→目標偏右時左轉
-        # 使用 atan2(dx, dy) 計算方位角誤差
-        heading_err = math.atan2(dx, dy)   # rad，正=右偏
-        w_raw = -self._kp_ang * heading_err
-        w     = max(-self._max_w, min(self._max_w, w_raw))
+        # 方位角誤差（rad，正=目標偏右）
+        heading_err = math.atan2(dx, dy)
+
+        # 線速度誤差 = dist - arm_reach
+        dist_err = dist - self._arm_reach
+
+        # 積分累積（含防飽和 anti-windup）
+        self._integral_dist    = max(-INTEGRAL_WINDUP_MAX,
+                                     min(INTEGRAL_WINDUP_MAX,
+                                         self._integral_dist + dist_err * dt))
+        self._integral_heading = max(-INTEGRAL_WINDUP_MAX,
+                                     min(INTEGRAL_WINDUP_MAX,
+                                         self._integral_heading + heading_err * dt))
+
+        # PI 控制輸出
+        v_raw = self._kp_lin * dist_err + self._ki_lin * self._integral_dist
+        w_raw = -(self._kp_ang * heading_err + self._ki_ang * self._integral_heading)
+
+        v = max(0.0, min(v_raw, self._max_v))               # 只允許前進
+        w = max(-self._max_w, min(self._max_w, w_raw))
 
         self._publish_cmd_vel(v, w)
         self._publish_aligned(False)
@@ -241,13 +275,15 @@ class VisualServoNode(Node):
             dy_m=dy,
             v_cmd=round(v, 4),
             w_cmd=round(w, 4),
+            integral_dist=round(self._integral_dist, 4),
+            integral_heading=round(self._integral_heading, 4),
             burrow_id=bid,
-            message=f"伺服中 dist={dist:.3f}m heading_err={math.degrees(heading_err):.1f}°"
+            message=f"PI 伺服中 dist={dist:.3f}m heading_err={math.degrees(heading_err):.1f}°"
         )
 
         self.get_logger().debug(
-            f"[VisualServo] servo: dist={dist:.3f}m, "
-            f"v={v:.4f}m/s, w={w:.4f}rad/s, bid={bid}"
+            f"[VisualServo] PI: dist={dist:.3f}m v={v:.4f}m/s w={w:.4f}rad/s "
+            f"I_dist={self._integral_dist:.3f} I_hdg={self._integral_heading:.3f} bid={bid}"
         )
 
     # -----------------------------------------------------------------------
